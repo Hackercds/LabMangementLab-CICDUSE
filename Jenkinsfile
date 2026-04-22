@@ -15,53 +15,36 @@ pipeline {
         }
         
         stage('后端构建') {
-            agent {
-                docker {
-                    image 'maven:3.8-openjdk-11'
-                    args '-v $HOME/.m2:/root/.m2'
-                }
-            }
             steps {
                 echo '🔨 构建后端项目...'
                 sh '''
-                    cd backend
-                    mvn clean package -DskipTests
+                    docker run --rm \
+                        -v "$PWD/backend:/app" \
+                        -v "$HOME/.m2:/root/.m2" \
+                        -w /app \
+                        maven:3.8-openjdk-11 \
+                        mvn clean package -DskipTests
                 '''
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: 'backend/target/*.jar', fingerprint: true
-                }
             }
         }
         
         stage('前端构建') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                }
-            }
             steps {
                 echo '🔨 构建前端项目...'
                 sh '''
-                    cd frontend
-                    npm install
-                    npm run build
+                    docker run --rm \
+                        -v "$PWD/frontend:/app" \
+                        -w /app \
+                        node:18-alpine \
+                        sh -c "npm install && npm run build"
                 '''
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: 'frontend/dist/**/*', fingerprint: true
-                }
             }
         }
         
         stage('Docker镜像构建') {
             steps {
                 echo '🐳 构建Docker镜像...'
-                sh '''
-                    docker-compose build
-                '''
+                sh 'docker compose build'
             }
         }
         
@@ -69,8 +52,8 @@ pipeline {
             steps {
                 echo '🚀 部署服务...'
                 sh '''
-                    docker-compose down --remove-orphans || true
-                    docker-compose up -d
+                    docker compose down --remove-orphans || true
+                    docker compose up -d
                 '''
             }
         }
@@ -82,8 +65,7 @@ pipeline {
                     echo "等待服务启动..."
                     sleep 60
                     
-                    # 检查后端健康
-                    for i in {1..30}; do
+                    for i in $(seq 1 30); do
                         if curl -sf http://localhost:8081/api/actuator/health; then
                             echo "后端服务健康检查通过"
                             break
@@ -92,7 +74,6 @@ pipeline {
                         sleep 5
                     done
                     
-                    # 检查前端
                     if curl -sf http://localhost:80; then
                         echo "前端服务健康检查通过"
                     fi
@@ -119,7 +100,7 @@ pipeline {
         
         failure {
             echo '❌ Pipeline执行失败！'
-            sh 'docker-compose logs || true'
+            sh 'docker compose logs --tail=50 || true'
         }
         
         always {
