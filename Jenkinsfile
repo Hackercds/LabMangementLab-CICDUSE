@@ -4,6 +4,7 @@ pipeline {
     environment {
         PROJECT_NAME = 'lab-management-system'
         NETWORK = 'lab-network'
+        HOST_IP = '192.168.3.55'
     }
 
     stages {
@@ -125,7 +126,7 @@ pipeline {
                     sleep 60
 
                     for i in $(seq 1 30); do
-                        if curl -sf http://localhost:8081/api/actuator/health; then
+                        if curl -sf http://${HOST_IP}:8081/api/actuator/health; then
                             echo "后端服务健康检查通过"
                             break
                         fi
@@ -133,7 +134,7 @@ pipeline {
                         sleep 5
                     done
 
-                    if curl -sf http://localhost:80; then
+                    if curl -sf http://${HOST_IP}:80; then
                         echo "前端服务健康检查通过"
                     fi
                 '''
