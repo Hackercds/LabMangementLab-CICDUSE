@@ -14,36 +14,9 @@ pipeline {
             }
         }
         
-        stage('后端构建') {
-            steps {
-                echo '🔨 构建后端项目...'
-                sh '''
-                    docker run --rm \
-                        -v "$PWD/backend:/app" \
-                        -v "$HOME/.m2:/root/.m2" \
-                        -w /app \
-                        maven:3.8-openjdk-11 \
-                        mvn clean package -DskipTests
-                '''
-            }
-        }
-        
-        stage('前端构建') {
-            steps {
-                echo '🔨 构建前端项目...'
-                sh '''
-                    docker run --rm \
-                        -v "$PWD/frontend:/app" \
-                        -w /app \
-                        node:18-alpine \
-                        sh -c "npm install && npm run build"
-                '''
-            }
-        }
-        
         stage('Docker镜像构建') {
             steps {
-                echo '🐳 构建Docker镜像...'
+                echo '🐳 构建Docker镜像（含后端+前端编译）...'
                 sh 'docker compose build'
             }
         }
@@ -63,7 +36,7 @@ pipeline {
                 echo '🏥 检查服务健康状态...'
                 sh '''
                     echo "等待服务启动..."
-                    sleep 60
+                    sleep 90
                     
                     for i in $(seq 1 30); do
                         if curl -sf http://localhost:8081/api/actuator/health; then
