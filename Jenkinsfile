@@ -142,22 +142,47 @@ SQL
             steps {
                 echo '🏥 检查服务健康状态...'
                 sh '''
-                    echo "等待服务启动（Spring Boot冷启动较慢）..."
-                    sleep 120
+                    echo "等待Spring Boot启动（冷启动较慢）..."
+                    sleep 30
 
-                    echo "开始健康检查..."
+                    echo "检查后端端口监听..."
+                    port_open=false
                     for i in $(seq 1 30); do
-                        if curl -sf http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health; then
-                            echo "后端服务健康检查通过"
+                        if (echo > /dev/tcp/${HOST_IP}/${BACKEND_PORT}) 2>/dev/null; then
+                            echo "后端端口 ${BACKEND_PORT} 已监听"
+                            port_open=true
                             break
                         fi
-                        echo "等待后端服务... ($i/30)"
+                        echo "等待后端端口监听... ($i/30)"
                         sleep 5
                     done
 
-                    if curl -sf http://${HOST_IP}:${FRONTEND_PORT}; then
-                        echo "前端服务健康检查通过"
+                    if [ "$port_open" != "true" ]; then
+                        echo "后端端口 ${BACKEND_PORT} 未启动，打印日志："
+                        docker logs lab-backend --tail 100 2>/dev/null || true
+                        exit 1
                     fi
+
+                    echo "检查后端健康状态..."
+                    for i in $(seq 1 30); do
+                        http_code=$(curl -s -o /dev/null -w "%{http_code}" http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health 2>/dev/null || echo "000")
+                        if [ "$http_code" = "200" ]; then
+                            echo "后端健康检查通过 (HTTP $http_code)"
+                            break
+                        fi
+                        echo "等待后端健康... ($i/30) HTTP状态: $http_code"
+                        sleep 5
+                    done
+
+                    echo "检查前端端口监听..."
+                    for i in $(seq 1 10); do
+                        if (echo > /dev/tcp/${HOST_IP}/${FRONTEND_PORT}) 2>/dev/null; then
+                            echo "前端端口 ${FRONTEND_PORT} 已监听"
+                            break
+                        fi
+                        echo "等待前端端口监听... ($i/10)"
+                        sleep 3
+                    done
                 '''
             }
         }
