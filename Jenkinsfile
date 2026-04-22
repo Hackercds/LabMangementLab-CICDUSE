@@ -17,7 +17,7 @@ pipeline {
         stage('Docker镜像构建') {
             steps {
                 echo '🐳 构建Docker镜像（含后端+前端编译）...'
-                sh 'docker compose build'
+                sh 'docker-compose build'
             }
         }
         
@@ -25,8 +25,8 @@ pipeline {
             steps {
                 echo '🚀 部署服务...'
                 sh '''
-                    docker compose down --remove-orphans || true
-                    docker compose up -d
+                    docker-compose down --remove-orphans || true
+                    docker-compose up -d
                 '''
             }
         }
@@ -73,7 +73,7 @@ pipeline {
         
         failure {
             echo '❌ Pipeline执行失败！'
-            sh 'docker compose logs --tail=50 || true'
+            sh 'docker-compose logs --tail=50 || true'
         }
         
         always {
