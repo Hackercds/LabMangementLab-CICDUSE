@@ -49,6 +49,7 @@ pipeline {
                         --name lab-mysql \
                         --restart always \
                         --network ${NETWORK} \
+                        --network-alias mysql \
                         -p 3306:3306 \
                         -e MYSQL_ROOT_PASSWORD=root123456 \
                         -e MYSQL_DATABASE=lab_management \
@@ -56,7 +57,6 @@ pipeline {
                         -e MYSQL_PASSWORD=lab123456 \
                         -e TZ=Asia/Shanghai \
                         -v lab-mysql-data:/var/lib/mysql \
-                        -v ${WORKSPACE}/backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro \
                         mysql:8.0 \
                         --character-set-server=utf8mb4 \
                         --collation-server=utf8mb4_unicode_ci \
@@ -72,11 +72,17 @@ pipeline {
                         sleep 5
                     done
 
+                    echo "初始化数据库..."
+                    docker cp ${WORKSPACE}/backend/src/main/resources/db/schema.sql lab-mysql:/tmp/schema.sql
+                    docker exec lab-mysql bash -c "mysql -u root -proot123456 < /tmp/schema.sql"
+                    docker exec lab-mysql rm -f /tmp/schema.sql
+
                     echo "启动Redis..."
                     docker run -d \
                         --name lab-redis \
                         --restart always \
                         --network ${NETWORK} \
+                        --network-alias redis \
                         -p 6379:6379 \
                         -v lab-redis-data:/data \
                         redis:7-alpine \
@@ -89,6 +95,7 @@ pipeline {
                         --name lab-backend \
                         --restart always \
                         --network ${NETWORK} \
+                        --network-alias backend \
                         -p 8081:8081 \
                         -e SPRING_PROFILES_ACTIVE=prod \
                         -e SERVER_PORT=8081 \
