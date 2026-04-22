@@ -3,7 +3,6 @@ pipeline {
     
     environment {
         PROJECT_NAME = 'lab-management-system'
-        DOCKER_REGISTRY = 'registry.example.com'
     }
     
     stages {
