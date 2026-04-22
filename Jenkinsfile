@@ -4,7 +4,6 @@ pipeline {
     environment {
         PROJECT_NAME = 'lab-management-system'
         NETWORK = 'lab-network'
-        HOST_IP = '192.168.3.55'
     }
 
     stages {
@@ -13,6 +12,37 @@ pipeline {
                 echo '📥 检出代码...'
                 checkout scm
                 sh 'git log -1 --pretty=format:"%h - %an, %ar : %s"'
+            }
+        }
+
+        stage('加载配置') {
+            steps {
+                echo '⚙️ 加载项目配置...'
+                sh '''
+                    if [ -f .env ]; then
+                        export $(grep -v "^#" .env | grep -v "^$" | xargs)
+                        echo "HOST_IP=${HOST_IP}"
+                        echo "BACKEND_PORT=${BACKEND_PORT}"
+                    else
+                        echo "ERROR: .env file not found!"
+                        exit 1
+                    fi
+                '''
+                script {
+                    def props = readProperties file: '.env'
+                    env.HOST_IP = props['HOST_IP'] ?: '192.168.3.55'
+                    env.BACKEND_PORT = props['BACKEND_PORT'] ?: '8081'
+                    env.FRONTEND_PORT = props['FRONTEND_PORT'] ?: '80'
+                    env.MYSQL_ROOT_PASSWORD = props['MYSQL_ROOT_PASSWORD'] ?: 'root123456'
+                    env.MYSQL_DATABASE = props['MYSQL_DATABASE'] ?: 'lab_management'
+                    env.MYSQL_USER = props['MYSQL_USER'] ?: 'labuser'
+                    env.MYSQL_PASSWORD = props['MYSQL_PASSWORD'] ?: 'lab123456'
+                    env.JWT_SECRET = props['JWT_SECRET'] ?: 'lab-management-jwt-secret-key-2024-production'
+                    env.JWT_EXPIRATION = props['JWT_EXPIRATION'] ?: '86400000'
+                    env.CORS_ALLOWED_ORIGINS = props['CORS_ALLOWED_ORIGINS'] ?: '*'
+                    env.JAVA_OPTS = props['JAVA_OPTS'] ?: '-Xms512m -Xmx1024m -XX:+UseG1GC'
+                }
+                echo "HOST_IP=${env.HOST_IP} BACKEND_PORT=${env.BACKEND_PORT}"
             }
         }
 
@@ -51,10 +81,10 @@ pipeline {
                         --network ${NETWORK} \
                         --network-alias mysql \
                         -p 3306:3306 \
-                        -e MYSQL_ROOT_PASSWORD=root123456 \
-                        -e MYSQL_DATABASE=lab_management \
-                        -e MYSQL_USER=labuser \
-                        -e MYSQL_PASSWORD=lab123456 \
+                        -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
+                        -e MYSQL_DATABASE=${MYSQL_DATABASE} \
+                        -e MYSQL_USER=${MYSQL_USER} \
+                        -e MYSQL_PASSWORD=${MYSQL_PASSWORD} \
                         -e TZ=Asia/Shanghai \
                         -v lab-mysql-data:/var/lib/mysql \
                         mysql:8.0 \
@@ -73,7 +103,7 @@ pipeline {
                     done
 
                     echo "初始化数据库..."
-                    docker exec -i lab-mysql mysql -u root -proot123456 < ${WORKSPACE}/backend/src/main/resources/db/schema.sql
+                    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} < ${WORKSPACE}/backend/src/main/resources/db/schema.sql
 
                     echo "启动Redis..."
                     docker run -d \
@@ -94,21 +124,22 @@ pipeline {
                         --restart always \
                         --network ${NETWORK} \
                         --network-alias backend \
-                        -p 8081:8080 \
+                        -p ${BACKEND_PORT}:${BACKEND_PORT} \
                         -e SPRING_PROFILES_ACTIVE=prod \
+                        -e SERVER_PORT=${BACKEND_PORT} \
                         -e DB_HOST=mysql \
                         -e DB_PORT=3306 \
-                        -e DB_NAME=lab_management \
-                        -e DB_USERNAME=labuser \
-                        -e DB_PASSWORD=lab123456 \
+                        -e DB_NAME=${MYSQL_DATABASE} \
+                        -e DB_USERNAME=${MYSQL_USER} \
+                        -e DB_PASSWORD=${MYSQL_PASSWORD} \
                         -e REDIS_HOST=redis \
                         -e REDIS_PORT=6379 \
                         -e REDIS_PASSWORD= \
                         -e REDIS_DATABASE=0 \
-                        -e JWT_SECRET=lab-management-jwt-secret-key-2024-production \
-                        -e JWT_EXPIRATION=86400000 \
-                        -e CORS_ALLOWED_ORIGINS="*" \
-                        -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC" \
+                        -e JWT_SECRET=${JWT_SECRET} \
+                        -e JWT_EXPIRATION=${JWT_EXPIRATION} \
+                        -e CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}" \
+                        -e JAVA_OPTS="${JAVA_OPTS}" \
                         lab-backend
 
                     echo "启动前端服务..."
@@ -116,7 +147,7 @@ pipeline {
                         --name lab-frontend \
                         --restart always \
                         --network ${NETWORK} \
-                        -p 80:80 \
+                        -p ${FRONTEND_PORT}:80 \
                         lab-frontend
                 '''
             }
@@ -130,7 +161,7 @@ pipeline {
                     sleep 60
 
                     for i in $(seq 1 30); do
-                        if curl -sf http://${HOST_IP}:8081/api/actuator/health; then
+                        if curl -sf http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health; then
                             echo "后端服务健康检查通过"
                             break
                         fi
@@ -138,7 +169,7 @@ pipeline {
                         sleep 5
                     done
 
-                    if curl -sf http://${HOST_IP}:80; then
+                    if curl -sf http://${HOST_IP}:${FRONTEND_PORT}; then
                         echo "前端服务健康检查通过"
                     fi
                 '''
@@ -154,8 +185,8 @@ pipeline {
             部署完成！
             ========================================
             访问地址:
-              前端页面: http://192.168.3.55
-              后端API:  http://192.168.3.55:8081/api
+              前端页面: http://${env.HOST_IP}:${env.FRONTEND_PORT}
+              后端API:  http://${env.HOST_IP}:${env.BACKEND_PORT}/api
             默认账号:
               管理员: admin / admin123
             ========================================
