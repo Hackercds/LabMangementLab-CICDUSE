@@ -4,6 +4,17 @@ pipeline {
     environment {
         PROJECT_NAME = 'lab-management-system'
         NETWORK = 'lab-network'
+        HOST_IP = '192.168.3.55'
+        BACKEND_PORT = '8081'
+        FRONTEND_PORT = '80'
+        MYSQL_ROOT_PASSWORD = 'root123456'
+        MYSQL_DATABASE = 'lab_management'
+        MYSQL_USER = 'labuser'
+        MYSQL_PASSWORD = 'lab123456'
+        JWT_SECRET = 'lab-management-jwt-secret-key-2024-production'
+        JWT_EXPIRATION = '86400000'
+        CORS_ALLOWED_ORIGINS = '*'
+        JAVA_OPTS = '-Xms512m -Xmx1024m -XX:+UseG1GC'
     }
 
     stages {
@@ -12,37 +23,6 @@ pipeline {
                 echo '📥 检出代码...'
                 checkout scm
                 sh 'git log -1 --pretty=format:"%h - %an, %ar : %s"'
-            }
-        }
-
-        stage('加载配置') {
-            steps {
-                echo '⚙️ 加载项目配置...'
-                sh '''
-                    if [ -f .env ]; then
-                        export $(grep -v "^#" .env | grep -v "^$" | xargs)
-                        echo "HOST_IP=${HOST_IP}"
-                        echo "BACKEND_PORT=${BACKEND_PORT}"
-                    else
-                        echo "ERROR: .env file not found!"
-                        exit 1
-                    fi
-                '''
-                script {
-                    def props = readProperties file: '.env'
-                    env.HOST_IP = props['HOST_IP'] ?: '192.168.3.55'
-                    env.BACKEND_PORT = props['BACKEND_PORT'] ?: '8081'
-                    env.FRONTEND_PORT = props['FRONTEND_PORT'] ?: '80'
-                    env.MYSQL_ROOT_PASSWORD = props['MYSQL_ROOT_PASSWORD'] ?: 'root123456'
-                    env.MYSQL_DATABASE = props['MYSQL_DATABASE'] ?: 'lab_management'
-                    env.MYSQL_USER = props['MYSQL_USER'] ?: 'labuser'
-                    env.MYSQL_PASSWORD = props['MYSQL_PASSWORD'] ?: 'lab123456'
-                    env.JWT_SECRET = props['JWT_SECRET'] ?: 'lab-management-jwt-secret-key-2024-production'
-                    env.JWT_EXPIRATION = props['JWT_EXPIRATION'] ?: '86400000'
-                    env.CORS_ALLOWED_ORIGINS = props['CORS_ALLOWED_ORIGINS'] ?: '*'
-                    env.JAVA_OPTS = props['JAVA_OPTS'] ?: '-Xms512m -Xmx1024m -XX:+UseG1GC'
-                }
-                echo "HOST_IP=${env.HOST_IP} BACKEND_PORT=${env.BACKEND_PORT}"
             }
         }
 
