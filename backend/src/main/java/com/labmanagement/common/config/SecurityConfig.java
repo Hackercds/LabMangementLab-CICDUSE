@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeHttpRequests()
-                .requestMatchers("/auth/login", "/auth/register", "/announcement/list", "/announcement/**").permitAll()
+                .requestMatchers("/auth/login", "/auth/register", "/announcement/list", "/announcement/**", "/actuator/**").permitAll()
                 .anyRequest().authenticated();
 
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
