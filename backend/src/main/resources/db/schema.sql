@@ -150,8 +150,9 @@ CREATE TABLE IF NOT EXISTS `operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
 
 -- 初始化数据：预置管理员账号，密码是 admin123 (BCrypt加密)
-INSERT IGNORE INTO `user` (username, password, real_name, role, status) VALUES
-('admin', '$2b$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', '系统管理员', 'ADMIN', 'ENABLED');
+INSERT IGNORE INTO `user` (id, username, password, real_name, role, status) VALUES
+(1, 'admin', '$2b$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', '系统管理员', 'ADMIN', 'ENABLED')
+ON DUPLICATE KEY UPDATE password = '$2b$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', real_name = '系统管理员', role = 'ADMIN';
 
 -- 预置几个实验室数据
 INSERT IGNORE INTO `lab` (name, location, capacity, device_count, status) VALUES

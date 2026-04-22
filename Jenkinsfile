@@ -44,6 +44,8 @@ pipeline {
 
                     docker network create ${NETWORK} 2>/dev/null || true
 
+                    docker volume rm lab-mysql-data 2>/dev/null || true
+                    docker volume rm lab-redis-data 2>/dev/null || true
                     docker volume create lab-mysql-data 2>/dev/null || true
                     docker volume create lab-redis-data 2>/dev/null || true
 
@@ -76,12 +78,7 @@ pipeline {
                     done
 
                     echo "初始化数据库..."
-                    docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS lab_management DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-                    sleep 2
-                    
-                    docker cp ${WORKSPACE}/backend/src/main/resources/db/schema.sql lab-mysql:/tmp/init.sql
-                    docker exec lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 lab_management < /tmp/init.sql
-                    docker exec lab-mysql rm -f /tmp/init.sql
+                    cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
                     echo "数据库初始化完成"
 
                     echo "启动Redis..."
