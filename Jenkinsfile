@@ -141,7 +141,7 @@ SQL
                     echo "检查后端端口监听..."
                     port_open=false
                     for i in $(seq 1 30); do
-                        if (echo > /dev/tcp/${HOST_IP}/${BACKEND_PORT}) 2>/dev/null; then
+                        if nc -z ${HOST_IP} ${BACKEND_PORT} 2>/dev/null || curl -s --connect-timeout 2 http://${HOST_IP}:${BACKEND_PORT} > /dev/null 2>&1; then
                             echo "后端端口 ${BACKEND_PORT} 已监听"
                             port_open=true
                             break
@@ -169,7 +169,7 @@ SQL
 
                     echo "检查前端端口监听..."
                     for i in $(seq 1 10); do
-                        if (echo > /dev/tcp/${HOST_IP}/${FRONTEND_PORT}) 2>/dev/null; then
+                        if nc -z ${HOST_IP} ${FRONTEND_PORT} 2>/dev/null || curl -s --connect-timeout 2 http://${HOST_IP}:${FRONTEND_PORT} > /dev/null 2>&1; then
                             echo "前端端口 ${FRONTEND_PORT} 已监听"
                             break
                         fi
