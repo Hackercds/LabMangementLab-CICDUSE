@@ -83,7 +83,12 @@ pipeline {
                     done
 
                     echo "初始化数据库..."
-                    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} < ${WORKSPACE}/backend/src/main/resources/db/schema.sql
+                    docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} <<'SQL'
+CREATE DATABASE IF NOT EXISTS lab_management DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+SQL
+                    sleep 3
+                    docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} lab_management < ${WORKSPACE}/backend/src/main/resources/db/schema.sql
+                    echo "数据库初始化完成"
 
                     echo "启动Redis..."
                     docker run -d \
@@ -137,9 +142,10 @@ pipeline {
             steps {
                 echo '🏥 检查服务健康状态...'
                 sh '''
-                    echo "等待服务启动..."
-                    sleep 60
+                    echo "等待服务启动（Spring Boot冷启动较慢）..."
+                    sleep 120
 
+                    echo "开始健康检查..."
                     for i in $(seq 1 30); do
                         if curl -sf http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health; then
                             echo "后端服务健康检查通过"
