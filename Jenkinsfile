@@ -73,9 +73,7 @@ pipeline {
                     done
 
                     echo "初始化数据库..."
-                    docker cp ${WORKSPACE}/backend/src/main/resources/db/schema.sql lab-mysql:/tmp/schema.sql
-                    docker exec lab-mysql bash -c "mysql -u root -proot123456 < /tmp/schema.sql"
-                    docker exec lab-mysql rm -f /tmp/schema.sql
+                    docker exec -i lab-mysql mysql -u root -proot123456 < ${WORKSPACE}/backend/src/main/resources/db/schema.sql
 
                     echo "启动Redis..."
                     docker run -d \
