@@ -94,9 +94,8 @@ pipeline {
                         --restart always \
                         --network ${NETWORK} \
                         --network-alias backend \
-                        -p 8081:8081 \
+                        -p 8081:8080 \
                         -e SPRING_PROFILES_ACTIVE=prod \
-                        -e SERVER_PORT=8081 \
                         -e DB_HOST=mysql \
                         -e DB_PORT=3306 \
                         -e DB_NAME=lab_management \
