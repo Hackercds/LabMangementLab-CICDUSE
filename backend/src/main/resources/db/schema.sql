@@ -4,7 +4,7 @@ CREATE DATABASE IF NOT EXISTS lab_management DEFAULT CHARACTER SET utf8mb4 COLLA
 USE lab_management;
 
 -- 1. 用户表
-CREATE TABLE `user` (
+CREATE TABLE IF NOT EXISTS `user` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '学号/工号',
     `password` VARCHAR(255) NOT NULL COMMENT '加密密码',
@@ -23,7 +23,7 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 2. 实验室表
-CREATE TABLE `lab` (
+CREATE TABLE IF NOT EXISTS `lab` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL UNIQUE COMMENT '实验室名称',
     `location` VARCHAR(100) COMMENT '位置',
@@ -40,7 +40,7 @@ CREATE TABLE `lab` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='实验室表';
 
 -- 3. 设备表
-CREATE TABLE `device` (
+CREATE TABLE IF NOT EXISTS `device` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL COMMENT '设备名称',
     `model` VARCHAR(100) COMMENT '型号',
@@ -62,7 +62,7 @@ CREATE TABLE `device` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备表';
 
 -- 4. 预约记录表
-CREATE TABLE `reservation` (
+CREATE TABLE IF NOT EXISTS `reservation` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT NOT NULL COMMENT '预约人ID',
     `lab_id` BIGINT NOT NULL COMMENT '实验室ID',
@@ -85,7 +85,7 @@ CREATE TABLE `reservation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='预约记录表';
 
 -- 5. 耗材表
-CREATE TABLE `consumable` (
+CREATE TABLE IF NOT EXISTS `consumable` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL COMMENT '耗材名称',
     `specification` VARCHAR(100) COMMENT '规格',
@@ -101,7 +101,7 @@ CREATE TABLE `consumable` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='耗材表';
 
 -- 6. 耗材出入库记录表
-CREATE TABLE `consumable_log` (
+CREATE TABLE IF NOT EXISTS `consumable_log` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `consumable_id` BIGINT NOT NULL COMMENT '耗材ID',
     `operation_type` ENUM('IN','OUT') NOT NULL COMMENT '操作类型：入库/出库',
@@ -117,7 +117,7 @@ CREATE TABLE `consumable_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='耗材出入库记录表';
 
 -- 7. 公告表
-CREATE TABLE `announcement` (
+CREATE TABLE IF NOT EXISTS `announcement` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(200) NOT NULL COMMENT '标题',
     `content` TEXT COMMENT '内容',
@@ -134,7 +134,7 @@ CREATE TABLE `announcement` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
 
 -- 8. 操作日志表
-CREATE TABLE `operation_log` (
+CREATE TABLE IF NOT EXISTS `operation_log` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `operator_id` BIGINT COMMENT '操作人ID',
     `operation_time` DATETIME COMMENT '操作时间',
@@ -150,17 +150,17 @@ CREATE TABLE `operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
 
 -- 初始化数据：预置管理员账号，密码是 admin123 (BCrypt加密)
-INSERT INTO `user` (username, password, real_name, role, status) VALUES
+INSERT IGNORE INTO `user` (username, password, real_name, role, status) VALUES
 ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EHsM8', '系统管理员', 'ADMIN', 'ENABLED');
 
 -- 预置几个实验室数据
-INSERT INTO `lab` (name, location, capacity, device_count, status) VALUES
+INSERT IGNORE INTO `lab` (name, location, capacity, device_count, status) VALUES
 ('计算机实验室1号楼101', '1号楼101室', 50, 50, 'FREE'),
 ('电子工程实验室2号楼203', '2号楼203室', 30, 25, 'FREE'),
 ('创新实验室3号楼305', '3号楼305室', 20, 15, 'FREE');
 
 -- 预置几个耗材数据
-INSERT INTO `consumable` (name, specification, unit, current_stock, warning_threshold, location) VALUES
+INSERT IGNORE INTO `consumable` (name, specification, unit, current_stock, warning_threshold, location) VALUES
 ('一次性手套', '中号', '包', 50, 10, '储物柜A1'),
 ('打印纸', 'A4', '箱', 20, 5, '储物柜A2'),
 ('U盘', '16GB', '个', 10, 3, '储物柜B1'),
