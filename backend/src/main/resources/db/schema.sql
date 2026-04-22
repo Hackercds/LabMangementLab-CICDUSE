@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS `operation_log` (
 
 -- 初始化数据：预置管理员账号，密码是 admin123 (BCrypt加密)
 INSERT IGNORE INTO `user` (username, password, real_name, role, status) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 'ADMIN', 'ENABLED');
+('admin', '$2b$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', '系统管理员', 'ADMIN', 'ENABLED');
 
 -- 预置几个实验室数据
 INSERT IGNORE INTO `lab` (name, location, capacity, device_count, status) VALUES
