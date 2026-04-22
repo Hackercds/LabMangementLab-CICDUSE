@@ -2,7 +2,7 @@
 # 多阶段构建，优化镜像大小
 
 # 构建阶段
-FROM maven:3.8-eclipse-temurin-11 AS builder
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # 运行阶段
-FROM eclipse-temurin:11-jre
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
