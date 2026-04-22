@@ -1,0 +1,77 @@
+# ==================== 后端 ====================
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/.idea/
+backend/*.iml
+backend/*.iws
+backend/*.ipr
+backend/.settings/
+backend/.classpath
+backend/.project
+
+# ==================== 前端 ====================
+frontend/node_modules/
+frontend/dist/
+frontend/.npm
+frontend/.eslintcache
+frontend/.DS_Store
+frontend/*.local
+
+# ==================== 测试 ====================
+tests/reports/
+tests/allure-results/
+tests/allure-report/
+tests/__pycache__/
+tests/*.pyc
+tests/.pytest_cache/
+tests/.coverage
+tests/htmlcov/
+
+# ==================== 环境变量 ====================
+.env
+.env.local
+.env.*.local
+
+# ==================== IDE ====================
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.classpath
+.project
+
+# ==================== 操作系统 ====================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ==================== 日志 ====================
+logs/
+*.log
+
+# ==================== 临时文件 ====================
+tmp/
+temp/
+*.tmp
+*.bak
+
+# ==================== Docker ====================
+.docker/
+
+# ==================== 备份 ====================
+backups/
+*.tar.gz
+*.zip
+
+# ==================== 其他 ====================
+.cache/
+.npm/
+*.pid
+*.seed
+*.pid.lock

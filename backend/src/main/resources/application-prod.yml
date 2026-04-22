@@ -1,0 +1,125 @@
+# ==================== 生产环境配置 ====================
+server:
+  port: ${SERVER_PORT:8081}
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 20
+    accept-count: 100
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 30
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      database: ${REDIS_DATABASE:0}
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# 日志配置
+logging:
+  level:
+    root: warn
+    com.labmanagement: info
+    org.springframework: warn
+    org.mybatis: warn
+  file:
+    name: /var/log/lab-management/application.log
+    max-size: 50MB
+    max-history: 90
+    total-size-cap: 5GB
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    default-statement-timeout: 60
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: 100MB
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 应用配置
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  
+  security:
+    rate-limit:
+      enabled: true
+      requests-per-minute: 60
+  
+  storage:
+    type: ${STORAGE_TYPE:oss}
+    local:
+      path: ${STORAGE_LOCAL_PATH:/data/uploads}
+    max-size: 20MB
+  
+  business:
+    reservation:
+      max-days-in-advance: 30
+      min-hours-in-advance: 2
+      max-hours-per-day: 8
+      cancel-hours-in-advance: 24
+    
+    device:
+      max-borrow-days: 30
+      overdue-fine-per-day: 10.0
+    
+    consumable:
+      warning-threshold: 10
+      auto-warning-enabled: true
+  
+  notification:
+    email:
+      enabled: ${NOTIFICATION_EMAIL_ENABLED:true}
+      host: ${NOTIFICATION_EMAIL_HOST}
+      port: ${NOTIFICATION_EMAIL_PORT}
+      username: ${NOTIFICATION_EMAIL_USERNAME}
+      password: ${NOTIFICATION_EMAIL_PASSWORD}
+      from: ${NOTIFICATION_EMAIL_FROM}
+    sms:
+      enabled: ${NOTIFICATION_SMS_ENABLED:true}
+      provider: ${NOTIFICATION_SMS_PROVIDER}
+      access-key: ${NOTIFICATION_SMS_ACCESS_KEY}
+      secret-key: ${NOTIFICATION_SMS_SECRET_KEY}

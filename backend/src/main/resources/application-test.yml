@@ -1,0 +1,70 @@
+# ==================== 测试环境配置 ====================
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:lab_management_test}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:labuser}
+    password: ${DB_PASSWORD:}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 15
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 1
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:test-lab-management-secret-key-2024}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# 日志配置
+logging:
+  level:
+    root: info
+    com.labmanagement: debug
+    org.springframework: info
+    org.mybatis: info
+  file:
+    name: logs/lab-management-test.log
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# 应用配置
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://test.example.com}
+  
+  security:
+    rate-limit:
+      enabled: true
+      requests-per-minute: 120
+  
+  storage:
+    type: ${STORAGE_TYPE:local}
+    local:
+      path: ${STORAGE_LOCAL_PATH:/data/uploads/test}
+  
+  notification:
+    email:
+      enabled: ${NOTIFICATION_EMAIL_ENABLED:false}
+    sms:
+      enabled: ${NOTIFICATION_SMS_ENABLED:false}

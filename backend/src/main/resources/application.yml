@@ -1,0 +1,231 @@
+# ==================== 服务器配置 ====================
+server:
+  port: ${SERVER_PORT:8081}
+  servlet:
+    context-path: ${SERVER_CONTEXT_PATH:/api}
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: ${SERVER_MAX_THREADS:200}
+    min-spare-threads: ${SERVER_MIN_THREADS:10}
+    accept-count: ${SERVER_ACCEPT_COUNT:100}
+    max-connections: ${SERVER_MAX_CONNECTIONS:10000}
+    connection-timeout: ${SERVER_CONNECTION_TIMEOUT:5000}
+
+# ==================== Spring配置 ====================
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:lab-management}
+  
+  # 环境配置
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:lab_management}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    
+    # HikariCP连接池配置
+    hikari:
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME:1800000}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:30000}
+      connection-test-query: SELECT 1
+      pool-name: LabManagementHikariPool
+  
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: ${REDIS_TIMEOUT:5000}
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:8}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:0}
+          max-wait: ${REDIS_POOL_MAX_WAIT:-1}
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:10MB}
+      file-size-threshold: ${UPLOAD_FILE_SIZE_THRESHOLD:2KB}
+  
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+  
+  # 缓存配置
+  cache:
+    type: ${CACHE_TYPE:redis}
+    redis:
+      time-to-live: ${CACHE_TTL:3600000}
+      cache-null-values: false
+  
+  # 异步任务配置
+  task:
+    execution:
+      pool:
+        core-size: ${ASYNC_POOL_CORE_SIZE:5}
+        max-size: ${ASYNC_POOL_MAX_SIZE:20}
+        queue-capacity: ${ASYNC_POOL_QUEUE_CAPACITY:100}
+        keep-alive: ${ASYNC_POOL_KEEP_ALIVE:60s}
+        allow-core-thread-timeout: true
+      thread-name-prefix: async-task-
+    scheduling:
+      pool:
+        size: ${SCHEDULING_POOL_SIZE:5}
+      thread-name-prefix: scheduling-
+
+# ==================== MyBatis-Plus配置 ====================
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: ${MYBATIS_LOG_IMPL:org.apache.ibatis.logging.stdout.StdOutImpl}
+    cache-enabled: true
+    lazy-loading-enabled: true
+    multiple-result-sets-enabled: true
+    use-generated-keys: true
+    default-executor-type: reuse
+    default-statement-timeout: ${MYBATIS_STATEMENT_TIMEOUT:30}
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      table-prefix: ${MYBATIS_TABLE_PREFIX:}
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.labmanagement.entity
+
+# ==================== JWT配置 ====================
+jwt:
+  secret: ${JWT_SECRET:lab-management-secret-key-2024-spring-boot-vue}
+  expiration: ${JWT_EXPIRATION:86400000}
+  header: ${JWT_HEADER:Authorization}
+  prefix: ${JWT_PREFIX:Bearer }
+  issuer: ${JWT_ISSUER:lab-management}
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:info}
+    com.labmanagement: ${LOG_LEVEL_APP:debug}
+    org.springframework: ${LOG_LEVEL_SPRING:info}
+    org.mybatis: ${LOG_LEVEL_MYBATIS:info}
+    com.zaxxer.hikari: ${LOG_LEVEL_HIKARI:info}
+  file:
+    name: ${LOG_FILE_NAME:logs/lab-management.log}
+    max-size: ${LOG_FILE_MAX_SIZE:10MB}
+    max-history: ${LOG_FILE_MAX_HISTORY:30}
+    total-size-cap: ${LOG_FILE_TOTAL_SIZE_CAP:1GB}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+
+# ==================== Actuator监控配置 ====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${ACTUATOR_ENDPOINTS:health,info,metrics,prometheus}
+      base-path: ${ACTUATOR_BASE_PATH:/actuator}
+  endpoint:
+    health:
+      show-details: ${ACTUATOR_HEALTH_SHOW_DETAILS:when-authorized}
+      probes:
+        enabled: true
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+    diskspace:
+      enabled: true
+      threshold: ${ACTUATOR_HEALTH_DISK_THRESHOLD:10MB}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${ACTUATOR_PROMETHEUS_ENABLED:true}
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active}
+
+# ==================== 应用自定义配置 ====================
+app:
+  # 应用信息
+  name: ${APP_NAME:实验室管理系统}
+  version: ${APP_VERSION:1.0.0}
+  description: ${APP_DESCRIPTION:实验室管理系统API}
+  
+  # 跨域配置
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+    max-age: ${CORS_MAX_AGE:3600}
+  
+  # 安全配置
+  security:
+    ignore-urls: ${SECURITY_IGNORE_URLS:/auth/login,/auth/register,/actuator/**}
+    rate-limit:
+      enabled: ${RATE_LIMIT_ENABLED:true}
+      requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:60}
+  
+  # 文件存储配置
+  storage:
+    type: ${STORAGE_TYPE:local}
+    local:
+      path: ${STORAGE_LOCAL_PATH:./uploads}
+    max-size: ${STORAGE_MAX_SIZE:10MB}
+    allowed-types: ${STORAGE_ALLOWED_TYPES:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx}
+  
+  # 业务配置
+  business:
+    # 预约配置
+    reservation:
+      max-days-in-advance: ${RESERVATION_MAX_DAYS:30}
+      min-hours-in-advance: ${RESERVATION_MIN_HOURS:2}
+      max-hours-per-day: ${RESERVATION_MAX_HOURS:8}
+      cancel-hours-in-advance: ${RESERVATION_CANCEL_HOURS:24}
+    
+    # 设备配置
+    device:
+      max-borrow-days: ${DEVICE_MAX_BORROW_DAYS:30}
+      overdue-fine-per-day: ${DEVICE_OVERDUE_FINE:10.0}
+    
+    # 耗材配置
+    consumable:
+      warning-threshold: ${CONSUMABLE_WARNING_THRESHOLD:10}
+      auto-warning-enabled: ${CONSUMABLE_AUTO_WARNING:true}
+  
+  # 通知配置
+  notification:
+    email:
+      enabled: ${NOTIFICATION_EMAIL_ENABLED:false}
+      host: ${NOTIFICATION_EMAIL_HOST:smtp.example.com}
+      port: ${NOTIFICATION_EMAIL_PORT:587}
+      username: ${NOTIFICATION_EMAIL_USERNAME:}
+      password: ${NOTIFICATION_EMAIL_PASSWORD:}
+      from: ${NOTIFICATION_EMAIL_FROM:noreply@example.com}
+    sms:
+      enabled: ${NOTIFICATION_SMS_ENABLED:false}
+      provider: ${NOTIFICATION_SMS_PROVIDER:aliyun}
+      access-key: ${NOTIFICATION_SMS_ACCESS_KEY:}
+      secret-key: ${NOTIFICATION_SMS_SECRET_KEY:}

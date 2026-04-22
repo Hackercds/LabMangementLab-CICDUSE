@@ -1,0 +1,1029 @@
+{
+  "info": {
+    "name": "实验室管理系统 API 测试集合",
+    "_postman_id": "lab-management-collection",
+    "description": "实验室管理系统所有接口测试集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "认证模块",
+      "item": [
+        {
+          "name": "用户登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"admin\", \"password\": \"admin123\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "用户注册",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"test001\", \"password\": \"123456\", \"realName\": \"测试用户\", \"role\": \"STUDENT\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "获取当前用户信息",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "修改密码",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"oldPassword\": \"123456\", \"newPassword\": \"1234567\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "用户管理模块(管理员)",
+      "item": [
+        {
+          "name": "分页查询用户列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/page?current=1&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "page"
+              ],
+              "query": [
+                {
+                  "key": "current",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "keyword",
+                  "value": ""
+                },
+                {
+                  "key": "role",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "新增用户",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"newuser\", \"password\": \"123456\", \"realName\": \"新用户\", \"role\": \"STUDENT\", \"status\": \"ENABLED\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "修改用户状态",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}/status?status=DISABLED",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "{{userId}}",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DISABLED"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "删除用户",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "实验室模块",
+      "item": [
+        {
+          "name": "获取全部实验室列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/lab/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lab",
+                "list"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "分页查询实验室",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/lab/page?current=1&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lab",
+                "page"
+              ],
+              "query": [
+                {
+                  "key": "current",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "新增实验室(管理员)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"测试实验室\", \"location\": \"测试楼101\", \"capacity\": 30, \"deviceCount\": 30, \"status\": \"FREE\", \"director\": \"张老师\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/lab",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lab"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "预约模块",
+      "item": [
+        {
+          "name": "查询已占用时间段",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservation/busy?labId=1&date=2024-01-15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservation",
+                "busy"
+              ],
+              "query": [
+                {
+                  "key": "labId",
+                  "value": "1"
+                },
+                {
+                  "key": "date",
+                  "value": "2024-01-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "获取我的预约列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservation/my?current=1&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservation",
+                "my"
+              ],
+              "query": [
+                {
+                  "key": "current",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "提交预约申请",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"labId\": 1, \"reservationDate\": \"2024-01-15\", \"startTime\": \"08:00\", \"endTime\": \"10:00\", \"purpose\": \"课程实验\", \"participantCount\": 30}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservation"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "取消预约",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservation/{{reservationId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservation",
+                "{{reservationId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "审批预约",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservation/{{reservationId}}/approve?status=APPROVED&comment=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservation",
+                "{{reservationId}}",
+                "approve"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "APPROVED"
+                },
+                {
+                  "key": "comment",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "设备模块",
+      "item": [
+        {
+          "name": "获取设备列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/device/list?labId=1&status=NORMAL",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "device",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "labId",
+                  "value": "1"
+                },
+                {
+                  "key": "status",
+                  "value": "NORMAL"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "分页查询设备",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/device/page?current=1&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "device",
+                "page"
+              ],
+              "query": [
+                {
+                  "key": "current",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "借用设备",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"expectReturnTime\": \"2024-01-22\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/device/{{deviceId}}/borrow",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "device",
+                "{{deviceId}}",
+                "borrow"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "归还设备",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/device/{{deviceId}}/return",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "device",
+                "{{deviceId}}",
+                "return"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "新增设备(管理员)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"示波器\", \"model\": \"XXX-2000\", \"serialNumber\": \"SN123456\", \"labId\": 1, \"purchaseDate\": \"2024-01-01\", \"status\": \"NORMAL\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/device",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "device"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "耗材模块",
+      "item": [
+        {
+          "name": "获取全部耗材列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/consumable/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumable",
+                "list"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "获取低库存耗材列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/consumable/warning",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumable",
+                "warning"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "新增耗材(管理员)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"一次性手套\", \"specification\": \"中号\", \"unit\": \"包\", \"currentStock\": 50, \"warningThreshold\": 10, \"location\": \"储物柜A1\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/consumable",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumable"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "耗材入库",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"quantity\": 10, \"purpose\": \"采购入库\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/consumable/{{consumableId}}/in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumable",
+                "{{consumableId}}",
+                "in"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "耗材领用出库",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"quantity\": 5, \"purpose\": \"实验使用\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/consumable/{{consumableId}}/out",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "consumable",
+                "{{consumableId}}",
+                "out"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "统计模块",
+      "item": [
+        {
+          "name": "仪表盘统计",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "实验室使用率统计",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/lab-usage?startDate=2024-01-01&endDate=2024-01-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "lab-usage"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "导出实验室使用率Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/statistics/export/lab-usage?startDate=2024-01-01&endDate=2024-01-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "statistics",
+                "export",
+                "lab-usage"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "公告模块",
+      "item": [
+        {
+          "name": "获取公开公告列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/announcement/list?current=1&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "announcement",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "current",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "新增公告(管理员)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\": \"实验室放假通知\", \"content\": \"春节期间实验室暂停开放，请大家注意安排时间\", \"isTop\": 1, \"status\": \"PUBLISHED\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/announcement",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "announcement"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "操作日志模块",
+      "item": [
+        {
+          "name": "分页查询操作日志",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operation-log/page?current=1&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operation-log",
+                "page"
+              ],
+              "query": [
+                {
+                  "key": "current",
+                  "value": "1"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "module",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "reservationId",
+      "value": "1"
+    },
+    {
+      "key": "deviceId",
+      "value": "1"
+    },
+    {
+      "key": "consumableId",
+      "value": "1"
+    }
+  ]
+}

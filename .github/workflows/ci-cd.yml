@@ -1,0 +1,320 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  DOCKER_REGISTRY: registry.example.com
+  DOCKER_IMAGE_BACKEND: ${{ env.DOCKER_REGISTRY }}/lab-management-backend
+  DOCKER_IMAGE_FRONTEND: ${{ env.DOCKER_REGISTRY }}/lab-management-frontend
+
+jobs:
+  # ==================== 构建阶段 ====================
+  backend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: ☕ 设置JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 🔨 构建后端项目
+        run: |
+          cd backend
+          mvn clean package -DskipTests
+
+      - name: 📦 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🟢 设置Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 🔨 构建前端项目
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: 📦 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+  # ==================== 测试阶段 ====================
+  backend-test:
+    runs-on: ubuntu-latest
+    needs: backend-build
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: ☕ 设置JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 🧪 运行后端单元测试
+        run: |
+          cd backend
+          mvn test
+
+      - name: 📊 发布测试报告
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Backend Test Report
+          path: backend/target/surefire-reports/TEST-*.xml
+          reporter: java-junit
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    needs: frontend-build
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🟢 设置Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 🧪 运行前端单元测试
+        run: |
+          cd frontend
+          npm install
+          npm run test:unit || true
+
+  # ==================== 代码质量检查 ====================
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: ☕ 设置JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 🔍 后端代码质量检查
+        run: |
+          cd backend
+          mvn checkstyle:check || true
+        continue-on-error: true
+
+      - name: 🟢 设置Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 🔍 前端代码质量检查
+        run: |
+          cd frontend
+          npm install
+          npm run lint || true
+        continue-on-error: true
+
+  # ==================== Docker镜像构建 ====================
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend-test]
+    if: github.event_name == 'push'
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 📥 下载后端构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/
+
+      - name: 📥 下载前端构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: 🔐 登录Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🐳 构建并推送后端镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_BACKEND }}:${{ github.sha }}
+            ${{ env.DOCKER_IMAGE_BACKEND }}:latest
+
+      - name: 🐳 构建并推送前端镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_FRONTEND }}:${{ github.sha }}
+            ${{ env.DOCKER_IMAGE_FRONTEND }}:latest
+
+  # ==================== 部署到测试环境 ====================
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🚀 部署到测试环境
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/lab-management
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
+            sleep 30
+            docker-compose ps
+
+      - name: ✅ 部署完成通知
+        run: echo "测试环境部署完成"
+
+  # ==================== 部署到生产环境 ====================
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🚀 部署到生产环境
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/lab-management
+            ./scripts/backup.sh
+            docker-compose -f docker-compose.prod.yml pull
+            ./scripts/blue-green-deploy.sh
+            sleep 30
+            ./scripts/health-check.sh
+
+      - name: ✅ 部署完成通知
+        run: echo "生产环境部署完成"
+
+  # ==================== 冒烟测试 ====================
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🐍 设置Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 安装测试依赖
+        run: |
+          cd tests
+          pip install -r requirements.txt
+
+      - name: 🧪 运行冒烟测试
+        run: |
+          cd tests
+          python run_tests.py smoke
+
+      - name: 📊 发布测试报告
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-report
+          path: tests/reports/
+
+      - name: 📈 生成Allure报告
+        uses: simple-elf/allure-report-action@v1
+        if: always()
+        with:
+          allure_results: tests/reports/allure-results
+          allure_report: allure-report
+          allure_history: allure-history
+
+      - name: 🚀 部署Allure报告到GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-history
+
+  # ==================== API自动化测试 ====================
+  api-test:
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🐍 设置Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 安装测试依赖
+        run: |
+          cd tests
+          pip install -r requirements.txt
+
+      - name: 🧪 运行API自动化测试
+        run: |
+          cd tests
+          python run_tests.py full
+
+      - name: 📊 发布测试报告
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-report
+          path: tests/reports/

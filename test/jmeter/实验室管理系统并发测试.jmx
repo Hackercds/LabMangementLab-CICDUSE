@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.0" properties="5.0" jmeter="5.4.1">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="实验室管理系统并发性能测试" enabled="true">
+      <stringProp name="TestPlan.comments">
+性能测试场景:
+1. 50并发用户同时登录
+2. 30并发用户同时预约同一实验室同一时间段(测试冲突检测和事务)
+3. 20并发用户同时查询设备列表
+      </stringProp>
+      <boolProp name="TestPlan.functionalMode">false</boolProp>
+      <boolProp name="TestPlan.overrideauth">false</boolProp>
+      <boolProp name="TestPlan.crossThreadpool">false</boolProp>
+      <boolProp name="TestPlan.serializeThreadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="baseUrl" elementType="Argument">
+            <stringProp name="Argument.name">baseUrl</stringProp>
+            <stringProp name="Argument.value">http://localhost:8080/api</stringProp>
+          </elementProp>
+          <elementProp name="adminUser" elementType="Argument">
+            <stringProp name="Argument.name">adminUser</stringProp>
+            <stringProp name="Argument.value">admin</stringProp>
+          </elementProp>
+          <elementProp name="adminPassword" elementType="Argument">
+            <stringProp name="Argument.name">adminPassword</stringProp>
+            <stringProp name="Argument.value">admin123</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <intProp name="TestPlan.serializeAll">0</intProp>
+      <boolProp name="TestPlan.tearDownOnShutdown">false</boolProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="场景1: 50并发用户登录" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">2</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">50</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.delayedStartup">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="用户登录" enabled="true">
+          <boolProp name="HTTPSamplerProxy.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSamplerProxy.post_browser_rtf">false</boolProp>
+          <stringProp name="HTTPSamplerProxy.domain"></stringProp>
+          <stringProp name="HTTPSamplerProxy.port"></stringProp>
+          <stringProp name="HTTPSamplerProxy.path">${baseUrl}/auth/login</stringProp>
+          <stringProp name="HTTPSamplerProxy.method">POST</stringProp>
+          <stringProp name="HTTPSamplerProxy.contentEncoding">UTF-8</stringProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
+            <collectionProp name="Arguments.arguments">
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSamplerProxy.raw_body">{
+  "username": "${adminUser}",
+  "password": "${adminPassword}"
+}</stringProp>
+          <stringProp name="HTTPSamplerProxy.contentType">application/json</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="结果树" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <SummaryReport guiclass="SummaryReportGui" testclass="SummaryReport" testname="汇总报告" enabled="true">
+          <boolProp name="SummaryReport.errorLogging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </SummaryReport>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="场景2: 30并发预约冲突测试" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">30</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">5</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.delayedStartup">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <HeaderManager guiclass="HeaderManagerGui" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Authorization</stringProp>
+              <stringProp name="Header.value">Bearer ${token}</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="提交预约申请" enabled="true">
+          <boolProp name="HTTPSamplerProxy.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSamplerProxy.post_browser_rtf">false</boolProp>
+          <stringProp name="HTTPSamplerProxy.domain"></stringProp>
+          <stringProp name="HTTPSamplerProxy.port"></stringProp>
+          <stringProp name="HTTPSamplerProxy.path">${baseUrl}/reservation</stringProp>
+          <stringProp name="HTTPSamplerProxy.method">POST</stringProp>
+          <stringProp name="HTTPSamplerProxy.contentEncoding">UTF-8</stringProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
+            <collectionProp name="Arguments.arguments">
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSamplerProxy.raw_body">{
+  "labId": 1,
+  "reservationDate": "2024-06-15",
+  "startTime": "08:00",
+  "endTime": "10:00",
+  "purpose": "并发测试",
+  "participantCount": 10
+}</stringProp>
+          <stringProp name="HTTPSamplerProxy.contentType">application/json</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="结果树" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <SummaryReport guiclass="SummaryReportGui" testclass="SummaryReport" testname="汇总报告" enabled="true">
+          <boolProp name="SummaryReport.errorLogging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </SummaryReport>
+        <hashTree/>
+        <AggregateReport guiclass="AggregateReportGui" testclass="AggregateReport" testname="聚合报告" enabled="true">
+          <boolProp name="AggregateReport.errorLogging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </AggregateReport>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="场景3: 20并发设备列表查询" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">5</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">20</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.delayedStartup">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <HeaderManager guiclass="HeaderManagerGui" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Authorization</stringProp>
+              <stringProp name="Header.value">Bearer ${token}</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="查询设备列表" enabled="true">
+          <boolProp name="HTTPSamplerProxy.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSamplerProxy.post_browser_rtf">false</boolProp>
+          <stringProp name="HTTPSamplerProxy.domain"></stringProp>
+          <stringProp name="HTTPSamplerProxy.port"></stringProp>
+          <stringProp name="HTTPSamplerProxy.path">${baseUrl}/device/page?current=1&amp;size=10</stringProp>
+          <stringProp name="HTTPSamplerProxy.method">GET</stringProp>
+          <stringProp name="HTTPSamplerProxy.contentEncoding">UTF-8</stringProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true">
+            <collectionProp name="Arguments.arguments">
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSamplerProxy.raw_body"></stringProp>
+          <stringProp name="HTTPSamplerProxy.contentType">application/json</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="结果树" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <SummaryReport guiclass="SummaryReportGui" testclass="SummaryReport" testname="汇总报告" enabled="true">
+          <boolProp name="SummaryReport.errorLogging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </SummaryReport>
+        <hashTree/>
+        <AggregateReport guiclass="AggregateReportGui" testclass="AggregateReport" testname="聚合报告" enabled="true">
+          <boolProp name="AggregateReport.errorLogging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="org.apache.jmeter.util.SortableProperties">
+              <any entry="false" class="java.util.Properties">
+              </any>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </AggregateReport>
+        <hashTree/>
+        <ResponseTimeGraph guiclass="ResponseTimeGraphGui" testclass="ResponseTimeGraph" testname="响应时间图" enabled="true">
+          <stringProp name="ResponseTimeGraph.graphInterval">500</stringProp>
+          <boolProp name="ResponseTimeGraph.successOnly">false</boolProp>
+          <stringProp name="ResponseTimeGraph.maxPoints">1000</stringProp>
+        </ResponseTimeGraph>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

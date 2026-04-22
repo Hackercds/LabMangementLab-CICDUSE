@@ -1,0 +1,174 @@
+groups:
+  - name: service_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "服务 {{ $labels.job }} 已停止"
+          description: "服务 {{ $labels.instance }} 已经停止超过1分钟"
+
+      - alert: ServiceHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务响应时间过长"
+          description: "服务 {{ $labels.service }} 的95%响应时间超过1秒"
+
+  - name: jvm_alerts
+    rules:
+      - alert: JvmHighMemoryUsage
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM堆内存使用率过高"
+          description: "实例 {{ $labels.instance }} 的JVM堆内存使用率超过85%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: JvmMemoryCritical
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JVM堆内存即将耗尽"
+          description: "实例 {{ $labels.instance }} 的JVM堆内存使用率超过95%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: JvmGcPauseTooLong
+        expr: rate(jvm_gc_pause_seconds_sum[5m]) / rate(jvm_gc_pause_seconds_count[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM GC暂停时间过长"
+          description: "实例 {{ $labels.instance }} 的GC平均暂停时间超过500ms"
+
+      - alert: JvmHighThreadCount
+        expr: jvm_threads_current > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM线程数过多"
+          description: "实例 {{ $labels.instance }} 的线程数超过500，当前值: {{ $value }}"
+
+  - name: system_alerts
+    rules:
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU使用率过高"
+          description: "实例 {{ $labels.instance }} 的CPU使用率超过80%，当前值: {{ $value | humanize }}%"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "内存使用率过高"
+          description: "实例 {{ $labels.instance }} 的内存使用率超过85%，当前值: {{ $value | humanize }}%"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "磁盘空间不足"
+          description: "实例 {{ $labels.instance }} 的磁盘 {{ $labels.mountpoint }} 剩余空间不足15%，当前值: {{ $value | humanize }}%"
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "磁盘空间严重不足"
+          description: "实例 {{ $labels.instance }} 的磁盘 {{ $labels.mountpoint }} 剩余空间不足5%，当前值: {{ $value | humanize }}%"
+
+  - name: database_alerts
+    rules:
+      - alert: MysqlDown
+        expr: mysql_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL服务已停止"
+          description: "MySQL实例 {{ $labels.instance }} 已经停止"
+
+      - alert: MysqlTooManyConnections
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL连接数过多"
+          description: "MySQL连接数使用率超过80%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: MysqlSlowQueries
+        expr: rate(mysql_global_status_slow_queries[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL慢查询过多"
+          description: "MySQL每分钟慢查询数超过10，当前值: {{ $value | humanize }}"
+
+  - name: redis_alerts
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis服务已停止"
+          description: "Redis实例 {{ $labels.instance }} 已经停止"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis内存使用率过高"
+          description: "Redis内存使用率超过85%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients / redis_config_maxclients > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis连接数过多"
+          description: "Redis连接数使用率超过80%，当前值: {{ $value | humanizePercentage }}"
+
+  - name: http_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / sum(rate(http_server_requests_seconds_count[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP错误率过高"
+          description: "HTTP 5xx错误率超过5%，当前值: {{ $value | humanizePercentage }}"
+
+      - alert: HighRequestRate
+        expr: sum(rate(http_server_requests_seconds_count[5m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "请求量过高"
+          description: "当前请求量超过1000/秒，当前值: {{ $value | humanize }}/秒"

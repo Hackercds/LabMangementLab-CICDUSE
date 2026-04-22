@@ -1,0 +1,82 @@
+groups:
+  - name: log_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate({job="lab-management", level="ERROR"}[5m])) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "高错误日志率"
+          description: "过去5分钟内错误日志率超过10条/秒"
+
+      - alert: FrequentExceptions
+        expr: |
+          count_over_time({job="lab-management"} |= "Exception" [5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "频繁异常"
+          description: "过去5分钟内检测到超过50个异常"
+
+      - alert: DatabaseConnectionError
+        expr: |
+          count_over_time({job="lab-management"} |= "Connection refused" or |= "Unable to acquire JDBC Connection" [5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "数据库连接错误"
+          description: "检测到数据库连接问题"
+
+      - alert: OutOfMemoryError
+        expr: |
+          count_over_time({job="lab-management"} |= "OutOfMemoryError" [5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "内存溢出错误"
+          description: "检测到OutOfMemoryError"
+
+      - alert: SlowQueryDetected
+        expr: |
+          count_over_time({job="lab-management"} |= "slow query" or |= "took more than" [10m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "慢查询检测"
+          description: "过去10分钟内检测到超过10个慢查询"
+
+      - alert: AuthenticationFailure
+        expr: |
+          sum(rate({job="lab-management"} |= "Authentication failed" or |= "Invalid credentials" [5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "认证失败频繁"
+          description: "过去5分钟内认证失败率过高"
+
+      - alert: ServiceRestart
+        expr: |
+          count_over_time({job="lab-management"} |= "Started" or |= "Starting" [10m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "服务频繁重启"
+          description: "过去10分钟内服务重启超过3次"
+
+      - alert: Http5xxErrors
+        expr: |
+          sum(rate({job="lab-management"} |~ "status=[45]\\d{2}" [5m])) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx错误过多"
+          description: "过去5分钟内HTTP 5xx错误率过高"
