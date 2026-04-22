@@ -40,16 +40,9 @@ pipeline {
             steps {
                 echo '🚀 部署服务...'
                 sh '''
-                    docker network create ${NETWORK} 2>/dev/null || true
+                    docker rm -f lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
 
-                    docker stop lab-frontend 2>/dev/null || true
-                    docker rm lab-frontend 2>/dev/null || true
-                    docker stop lab-backend 2>/dev/null || true
-                    docker rm lab-backend 2>/dev/null || true
-                    docker stop lab-redis 2>/dev/null || true
-                    docker rm lab-redis 2>/dev/null || true
-                    docker stop lab-mysql 2>/dev/null || true
-                    docker rm lab-mysql 2>/dev/null || true
+                    docker network create ${NETWORK} 2>/dev/null || true
 
                     docker volume create lab-mysql-data 2>/dev/null || true
                     docker volume create lab-redis-data 2>/dev/null || true

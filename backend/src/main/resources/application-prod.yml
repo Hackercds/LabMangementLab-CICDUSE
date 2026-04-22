@@ -113,13 +113,13 @@ app:
   notification:
     email:
       enabled: ${NOTIFICATION_EMAIL_ENABLED:false}
-      host: ${NOTIFICATION_EMAIL_HOST}
-      port: ${NOTIFICATION_EMAIL_PORT}
-      username: ${NOTIFICATION_EMAIL_USERNAME}
-      password: ${NOTIFICATION_EMAIL_PASSWORD}
-      from: ${NOTIFICATION_EMAIL_FROM}
+      host: ${NOTIFICATION_EMAIL_HOST:smtp.example.com}
+      port: ${NOTIFICATION_EMAIL_PORT:587}
+      username: ${NOTIFICATION_EMAIL_USERNAME:}
+      password: ${NOTIFICATION_EMAIL_PASSWORD:}
+      from: ${NOTIFICATION_EMAIL_FROM:noreply@example.com}
     sms:
       enabled: ${NOTIFICATION_SMS_ENABLED:false}
-      provider: ${NOTIFICATION_SMS_PROVIDER}
-      access-key: ${NOTIFICATION_SMS_ACCESS_KEY}
-      secret-key: ${NOTIFICATION_SMS_SECRET_KEY}
+      provider: ${NOTIFICATION_SMS_PROVIDER:aliyun}
+      access-key: ${NOTIFICATION_SMS_ACCESS_KEY:}
+      secret-key: ${NOTIFICATION_SMS_SECRET_KEY:}
