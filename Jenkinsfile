@@ -47,22 +47,12 @@ pipeline {
                     
                     docker network create ${NETWORK} 2>/dev/null || true
 
-                    # 强制删除数据卷（如果删除失败会报错）
-                    echo "删除旧数据卷..."
-                    docker volume rm lab-mysql-data || echo "警告: MySQL数据卷可能不存在"
-                    docker volume rm lab-redis-data || echo "警告: Redis数据卷可能不存在"
+                    # 清理数据卷内容（而不是删除数据卷）
+                    echo "清理数据卷内容..."
+                    docker run --rm -v lab-mysql-data:/data alpine rm -rf /data/* 2>/dev/null || true
+                    docker run --rm -v lab-redis-data:/data alpine rm -rf /data/* 2>/dev/null || true
                     
-                    # 验证数据卷是否已删除
-                    if docker volume inspect lab-mysql-data 2>/dev/null; then
-                        echo "错误: MySQL数据卷仍然存在！"
-                        exit 1
-                    fi
-                    
-                    # 重新创建数据卷
-                    docker volume create lab-mysql-data
-                    docker volume create lab-redis-data
-                    
-                    echo "数据卷已清理并重建"
+                    echo "数据卷已清理"
 
                     echo "启动MySQL..."
                     docker run -d \
@@ -82,25 +72,15 @@ pipeline {
                         --collation-server=utf8mb4_unicode_ci \
                         --default-authentication-plugin=mysql_native_password
 
-                    echo "等待MySQL完全就绪..."
-                    mysql_ready=false
-                    for i in $(seq 1 30); do
-                        if docker exec lab-mysql mysqladmin ping -h localhost 2>/dev/null; then
-                            mysql_ready=true
-                            echo "MySQL已启动，等待密码初始化..."
-                            sleep 5
-                            echo "MySQL完全就绪"
+                    echo "等待MySQL就绪..."
+                    for i in $(seq 1 60); do
+                        if docker exec lab-mysql mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD} 2>/dev/null; then
+                            echo "MySQL已就绪"
                             break
                         fi
-                        echo "等待MySQL... ($i/30)"
-                        sleep 5
+                        echo "等待MySQL... ($i/60)"
+                        sleep 2
                     done
-
-                    if [ "$mysql_ready" != "true" ]; then
-                        echo "MySQL初始化超时，打印日志："
-                        docker logs lab-mysql --tail 50 2>/dev/null || true
-                        exit 1
-                    fi
 
                     echo "初始化数据库..."
                     cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
