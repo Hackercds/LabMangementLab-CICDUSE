@@ -6,6 +6,7 @@ import com.labmanagement.common.exception.ConflictException;
 import com.labmanagement.common.result.Result;
 import com.labmanagement.common.result.ResultCode;
 import com.labmanagement.entity.Reservation;
+import com.labmanagement.mapper.ReservationMapper;
 import com.labmanagement.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,10 +32,10 @@ public class ReservationController {
      * 查询指定日期某实验室的已占用时间段
      */
     @GetMapping("/busy")
-    public Result<List<ReservationService.BusyTime>> getBusyTimes(
+    public Result<List<ReservationMapper.BusyTime>> getBusyTimes(
             @RequestParam Long labId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<ReservationService.BusyTime> busyTimes = reservationService.getBusyTimes(labId, date);
+        List<ReservationMapper.BusyTime> busyTimes = reservationService.getBusyTimes(labId, date);
         return Result.success(busyTimes);
     }
 
