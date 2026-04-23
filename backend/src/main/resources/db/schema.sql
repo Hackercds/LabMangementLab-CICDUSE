@@ -166,3 +166,21 @@ INSERT IGNORE INTO `consumable` (name, specification, unit, current_stock, warni
 ('打印纸', 'A4', '箱', 20, 5, '储物柜A2'),
 ('U盘', '16GB', '个', 10, 3, '储物柜B1'),
 ('网线', 'RJ45', '根', 15, 5, '储物柜B2');
+
+-- 9. 系统配置表
+CREATE TABLE IF NOT EXISTS `system_config` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `config_key` VARCHAR(64) NOT NULL UNIQUE COMMENT '配置键',
+    `config_value` VARCHAR(256) NOT NULL COMMENT '配置值',
+    `description` VARCHAR(256) COMMENT '描述',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除',
+    INDEX idx_config_key(config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
+
+-- 初始化配置数据
+INSERT IGNORE INTO `system_config` (`config_key`, `config_value`, `description`) VALUES
+('auto_approve_teacher', 'false', '教师审批预约时是否自动审批无冲突预约（开启后自动通过无冲突预约）'),
+('reservation_max_days', '30', '最多可提前预约天数'),
+('reservation_max_per_day', '3', '每个学生每天最多预约次数');

@@ -57,15 +57,31 @@ service.interceptors.response.use(
   error => {
     console.error('响应错误', error)
     let message = error.message || '网络错误'
+    
+    // 401处理：仅在明确认证失败时登出
     if (error.response && error.response.status === 401) {
-      clearAuth()
-      window.location.href = '/#/login'
+      const body = error.response.data
+      const msg = body?.message || ''
+      // 仅在明确是认证问题时登出
+      if (msg.includes('未认证') || msg.includes('登录已过期') || msg.includes('Token')) {
+        clearAuth()
+        window.location.href = '/#/login'
+        return Promise.reject(error)
+      }
+      // 其他401（如业务层面的未授权）不登出，仅显示错误
+      ElMessage({
+        message: body?.message || '操作失败：权限不足',
+        type: 'error',
+        duration: 5000
+      })
       return Promise.reject(error)
     }
+    
     // 409冲突错误，将错误信息传递给调用方处理
     if (error.response && error.response.status === 409) {
       return Promise.reject(error)
     }
+    
     ElMessage({
       message: message,
       type: 'error',

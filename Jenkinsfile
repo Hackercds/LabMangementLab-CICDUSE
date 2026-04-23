@@ -91,7 +91,10 @@ pipeline {
                     done
 
                     echo "初始化数据库..."
+                    # 先导入基础schema
                     cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
+                    # 再导入系统配置
+                    cat ${WORKSPACE}/backend/src/main/resources/db/system_config.sql | docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
                     echo "数据库初始化完成"
 
 

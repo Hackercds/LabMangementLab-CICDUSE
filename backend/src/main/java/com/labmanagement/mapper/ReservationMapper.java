@@ -2,9 +2,7 @@ package com.labmanagement.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.labmanagement.entity.Reservation;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -14,9 +12,23 @@ import java.util.List;
 public interface ReservationMapper extends BaseMapper<Reservation> {
 
     /**
-     * 检测时间段是否冲突
-     * 条件：同一实验室、同一日期、时间段重叠、状态为已通过
-     * 重叠条件：新开始 < 已有结束 && 新结束 > 已有开始
+     * 使用悲观锁查询预约（防止并发冲突）
+     */
+    @Select("SELECT * FROM reservation WHERE id = #{id} AND deleted = 0 FOR UPDATE")
+    Reservation selectByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * 检测时间段是否冲突（包括所有状态的预约）
+     */
+    @Select("SELECT COUNT(*) FROM reservation WHERE lab_id = #{labId} AND reservation_date = #{date} " +
+            "AND status IN ('APPROVED', 'PENDING') AND deleted = 0 AND id != #{excludeId} " +
+            "AND #{startTime} < end_time AND #{endTime} > start_time")
+    int countAllConflicts(@Param("labId") Long labId, @Param("date") LocalDate date,
+                          @Param("startTime") LocalTime startTime, @Param("endTime") LocalTime endTime,
+                          @Param("excludeId") Long excludeId);
+
+    /**
+     * 检测时间段是否冲突（仅APPROVED状态的预约）
      */
     @Select("SELECT COUNT(*) FROM reservation WHERE lab_id = #{labId} AND reservation_date = #{date} " +
             "AND status = 'APPROVED' AND deleted = 0 " +
