@@ -40,14 +40,26 @@ pipeline {
             steps {
                 echo '🚀 部署服务...'
                 sh '''
+                    # 强制删除所有相关容器，确保数据卷可以正常卸载
                     docker rm -f lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
-
+                    # 等待Docker完全清理容器
+                    sleep 5
+                    
                     docker network create ${NETWORK} 2>/dev/null || true
 
+                    # 强制删除数据卷（必须确保没有容器在使用）
                     docker volume rm lab-mysql-data 2>/dev/null || true
                     docker volume rm lab-redis-data 2>/dev/null || true
+                    
+                    # 验证数据卷是否删除成功
+                    if docker volume inspect lab-mysql-data 2>/dev/null; then
+                        echo "警告: MySQL数据卷未删除成功，尝试强制删除..."
+                        docker volume rm lab-mysql-data 2>/dev/null || true
+                    fi
                     docker volume create lab-mysql-data 2>/dev/null || true
                     docker volume create lab-redis-data 2>/dev/null || true
+                    
+                    echo "数据卷已清理并重建"
 
                     echo "启动MySQL..."
                     docker run -d \
