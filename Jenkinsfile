@@ -42,18 +42,11 @@ pipeline {
             steps {
                 echo '🚀 部署服务...'
                 sh '''
-                    # 强制删除所有相关容器，确保数据卷可以正常卸载
-                    docker rm -f lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
-                    # 等待Docker完全清理容器
-                    sleep 5
-                    
-                    docker network create ${NETWORK} 2>/dev/null || true
-
-                    # 清理旧版本数据卷
+                    # 强制删除所有相关容器
                     docker rm -f lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
                     sleep 5
                     
-                    # 清理旧版本数据卷（保留最近5个版本）
+                    # 清理所有旧版本数据卷
                     echo "清理旧版本数据卷..."
                     for vol in $(docker volume ls -q | grep lab-mysql-data); do
                         docker volume rm "$vol" 2>/dev/null || true
@@ -89,7 +82,7 @@ pipeline {
 
                     echo "等待MySQL就绪..."
                     for i in $(seq 1 60); do
-                        if docker exec lab-mysql mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD} 2>/dev/null; then
+                        if docker exec lab-mysql mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} 2>/dev/null; then
                             echo "MySQL已就绪"
                             break
                         fi
@@ -98,8 +91,9 @@ pipeline {
                     done
 
                     echo "初始化数据库..."
-                    cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
+                    cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
                     echo "数据库初始化完成"
+
 
                     echo "启动Redis..."
                     docker run -d \
