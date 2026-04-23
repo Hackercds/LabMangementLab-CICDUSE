@@ -67,15 +67,25 @@ pipeline {
                         --collation-server=utf8mb4_unicode_ci \
                         --default-authentication-plugin=mysql_native_password
 
-                    echo "等待MySQL就绪..."
+                    echo "等待MySQL完全就绪..."
+                    mysql_ready=false
                     for i in $(seq 1 30); do
                         if docker exec lab-mysql mysqladmin ping -h localhost 2>/dev/null; then
-                            echo "MySQL已就绪"
+                            mysql_ready=true
+                            echo "MySQL已启动，等待密码初始化..."
+                            sleep 5
+                            echo "MySQL完全就绪"
                             break
                         fi
                         echo "等待MySQL... ($i/30)"
                         sleep 5
                     done
+
+                    if [ "$mysql_ready" != "true" ]; then
+                        echo "MySQL初始化超时，打印日志："
+                        docker logs lab-mysql --tail 50 2>/dev/null || true
+                        exit 1
+                    fi
 
                     echo "初始化数据库..."
                     cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
