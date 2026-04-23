@@ -60,6 +60,7 @@ service.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       clearAuth()
       window.location.href = '/#/login'
+      return Promise.reject(error)
     }
     // 409冲突错误，将错误信息传递给调用方处理
     if (error.response && error.response.status === 409) {

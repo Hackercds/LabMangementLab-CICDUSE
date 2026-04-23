@@ -7,18 +7,14 @@ import com.labmanagement.common.result.Result;
 import com.labmanagement.common.result.ResultCode;
 import com.labmanagement.entity.Reservation;
 import com.labmanagement.service.ReservationService;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestAttribute;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 预约管理控制器
@@ -137,19 +133,5 @@ public class ReservationController {
             @RequestAttribute Long userId) {
         List<Reservation> canceled = reservationService.forceApprove(id, comment, userId);
         return Result.success(canceled);
-    }
-
-    /**
-     * 冲突异常，携带冲突详情
-     */
-    @Data
-    public static class ConflictException extends RuntimeException {
-        private final Integer code = 409;
-        private final List<Reservation> conflicts;
-
-        public ConflictException(String message, List<Reservation> conflicts) {
-            super(message);
-            this.conflicts = conflicts;
-        }
     }
 }
