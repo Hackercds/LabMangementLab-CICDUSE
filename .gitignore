@@ -75,3 +75,7 @@ backups/
 *.pid
 *.seed
 *.pid.lock
+
+downloads/
+*.exe
+node_modules/
