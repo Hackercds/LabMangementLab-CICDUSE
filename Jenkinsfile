@@ -15,6 +15,8 @@ pipeline {
         JWT_EXPIRATION = '86400000'
         CORS_ALLOWED_ORIGINS = '*'
         JAVA_OPTS = '-Xms512m -Xmx1024m -XX:+UseG1GC'
+        MYSQL_VOLUME = "lab-mysql-data-${BUILD_NUMBER}"
+        REDIS_VOLUME = "lab-redis-data-${BUILD_NUMBER}"
     }
 
     stages {
@@ -47,12 +49,25 @@ pipeline {
                     
                     docker network create ${NETWORK} 2>/dev/null || true
 
-                    # 清理数据卷内容（而不是删除数据卷）
-                    echo "清理数据卷内容..."
-                    docker run --rm -v lab-mysql-data:/data alpine rm -rf /data/* 2>/dev/null || true
-                    docker run --rm -v lab-redis-data:/data alpine rm -rf /data/* 2>/dev/null || true
+                    # 清理旧版本数据卷
+                    docker rm -f lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
+                    sleep 5
                     
-                    echo "数据卷已清理"
+                    # 清理旧版本数据卷（保留最近5个版本）
+                    echo "清理旧版本数据卷..."
+                    for vol in $(docker volume ls -q | grep lab-mysql-data); do
+                        docker volume rm "$vol" 2>/dev/null || true
+                    done
+                    for vol in $(docker volume ls -q | grep lab-redis-data); do
+                        docker volume rm "$vol" 2>/dev/null || true
+                    done
+                    
+                    docker network create ${NETWORK} 2>/dev/null || true
+                    
+                    # 创建新版本数据卷
+                    docker volume create ${MYSQL_VOLUME}
+                    docker volume create ${REDIS_VOLUME}
+                    echo "数据卷: ${MYSQL_VOLUME}, ${REDIS_VOLUME}"
 
                     echo "启动MySQL..."
                     docker run -d \
@@ -66,7 +81,7 @@ pipeline {
                         -e MYSQL_USER=${MYSQL_USER} \
                         -e MYSQL_PASSWORD=${MYSQL_PASSWORD} \
                         -e TZ=Asia/Shanghai \
-                        -v lab-mysql-data:/var/lib/mysql \
+                        -v ${MYSQL_VOLUME}:/var/lib/mysql \
                         mysql:8.0 \
                         --character-set-server=utf8mb4 \
                         --collation-server=utf8mb4_unicode_ci \
@@ -93,7 +108,7 @@ pipeline {
                         --network ${NETWORK} \
                         --network-alias redis \
                         -p 6379:6379 \
-                        -v lab-redis-data:/data \
+                        -v ${REDIS_VOLUME}:/data \
                         redis:7-alpine \
                         redis-server --appendonly yes
 
