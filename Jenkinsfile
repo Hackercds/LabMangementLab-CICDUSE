@@ -47,17 +47,20 @@ pipeline {
                     
                     docker network create ${NETWORK} 2>/dev/null || true
 
-                    # 强制删除数据卷（必须确保没有容器在使用）
-                    docker volume rm lab-mysql-data 2>/dev/null || true
-                    docker volume rm lab-redis-data 2>/dev/null || true
+                    # 强制删除数据卷（如果删除失败会报错）
+                    echo "删除旧数据卷..."
+                    docker volume rm lab-mysql-data || echo "警告: MySQL数据卷可能不存在"
+                    docker volume rm lab-redis-data || echo "警告: Redis数据卷可能不存在"
                     
-                    # 验证数据卷是否删除成功
+                    # 验证数据卷是否已删除
                     if docker volume inspect lab-mysql-data 2>/dev/null; then
-                        echo "警告: MySQL数据卷未删除成功，尝试强制删除..."
-                        docker volume rm lab-mysql-data 2>/dev/null || true
+                        echo "错误: MySQL数据卷仍然存在！"
+                        exit 1
                     fi
-                    docker volume create lab-mysql-data 2>/dev/null || true
-                    docker volume create lab-redis-data 2>/dev/null || true
+                    
+                    # 重新创建数据卷
+                    docker volume create lab-mysql-data
+                    docker volume create lab-redis-data
                     
                     echo "数据卷已清理并重建"
 
