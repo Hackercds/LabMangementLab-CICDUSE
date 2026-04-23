@@ -17,7 +17,7 @@ public enum ResultCode {
     USER_NOT_FOUND(401, "用户不存在"),
     PASSWORD_ERROR(401, "密码错误"),
     ACCOUNT_DISABLED(401, "账号已被禁用"),
-    TIME_CONFLICT(400, "时间段冲突"),
+    TIME_CONFLICT(409, "时间段冲突"),
     INSUFFICIENT_STOCK(400, "库存不足"),
     DEVICE_NOT_AVAILABLE(400, "设备当前不可借用"),
     RESERVATION_ALREADY_PROCESSED(400, "预约已处理，不能重复操作");

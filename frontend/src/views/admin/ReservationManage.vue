@@ -64,9 +64,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getReservationList, approveReservation } from '@/api/reservation'
+import { getReservationList, approveReservation, forceApproveReservation } from '@/api/reservation'
 import { getLabList } from '@/api/lab'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const statusMap = {
   PENDING: { text: '待审批', type: 'warning' },
@@ -117,13 +117,40 @@ async function loadData() {
   }
 }
 
-async function handleApprove(row, status) {
+const handleApprove = async (row, status) => {
+  loading.value = true
   try {
     await approveReservation(row.id, status, '')
     ElMessage.success(status === 'APPROVED' ? '审批通过' : '已拒绝')
     loadData()
-  } catch (e) {
-    console.error(e)
+  } catch (error) {
+    // 处理409冲突错误
+    if (error.response && error.response.status === 409) {
+      const conflicts = error.response.data?.data || []
+      try {
+        await ElMessageBox.confirm(
+          `该时间段与以下 ${conflicts.length} 个预约冲突：\n\n` +
+          conflicts.map(c => `预约ID: ${c.id}, 日期: ${c.reservationDate}, 时间: ${c.startTime}-${c.endTime}`).join('\n') +
+          '\n\n是否强制审批？强制审批将自动拒绝冲突的预约。',
+          '时间冲突',
+          {
+            confirmButtonText: '强制审批',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+        // 用户选择强制审批
+        await forceApproveReservation(row.id, '')
+        ElMessage.success('强制审批成功，已自动拒绝冲突预约')
+        loadData()
+      } catch {
+        // 用户取消操作
+      }
+    } else {
+      ElMessage.error('审批失败')
+    }
+  } finally {
+    loading.value = false
   }
 }
 

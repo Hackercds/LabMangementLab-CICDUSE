@@ -60,3 +60,14 @@ export function approveReservation(id, status, comment) {
     params: { status, comment }
   })
 }
+
+/**
+ * 强制审批预约（自动拒绝冲突的预约）
+ */
+export function forceApproveReservation(id, comment = '') {
+  return request({
+    url: `/reservation/${id}/force-approve`,
+    method: 'put',
+    params: { comment }
+  })
+}

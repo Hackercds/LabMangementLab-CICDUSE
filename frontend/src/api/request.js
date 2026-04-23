@@ -33,8 +33,12 @@ service.interceptors.response.use(
         type: 'error',
         duration: 5000
       })
-      // 401 未认证
-      if (res.code === 401) {
+      // 401 仅在业务明确返回"未认证"时才处理，其他业务错误不登出
+      if (res.code === 401 && (
+        res.message.includes('未认证') ||
+        res.message.includes('登录已过期') ||
+        res.message.includes('认证失败')
+      )) {
         ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
           confirmButtonText: '去登录',
           cancelButtonText: '取消',
@@ -56,6 +60,10 @@ service.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       clearAuth()
       window.location.href = '/#/login'
+    }
+    // 409冲突错误，将错误信息传递给调用方处理
+    if (error.response && error.response.status === 409) {
+      return Promise.reject(error)
     }
     ElMessage({
       message: message,

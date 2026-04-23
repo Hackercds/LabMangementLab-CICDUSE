@@ -1,5 +1,6 @@
 package com.labmanagement.common.exception;
 
+import com.labmanagement.entity.Reservation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -39,6 +40,16 @@ public class GlobalExceptionHandler {
     public Result<Void> handleBusinessException(BusinessException e, HttpServletRequest request) {
         log.warn("业务异常: {} - {}", request.getRequestURI(), e.getMessage());
         return Result.fail(e.getCode(), e.getMessage());
+    }
+
+    /**
+     * 冲突异常 - 返回HTTP 409和冲突详情
+     */
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Result<List<Reservation>> handleConflictException(ConflictException e, HttpServletRequest request) {
+        log.warn("冲突异常: {} - {}, 冲突数量: {}", request.getRequestURI(), e.getMessage(), e.getConflicts().size());
+        return Result.fail(409, e.getMessage(), e.getConflicts());
     }
 
     /**

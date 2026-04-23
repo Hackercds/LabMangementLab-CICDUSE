@@ -25,6 +25,17 @@ public interface ReservationMapper extends BaseMapper<Reservation> {
                       @Param("startTime") LocalTime startTime, @Param("endTime") LocalTime endTime);
 
     /**
+     * 查询冲突的预约（包括已通过和待审批）
+     */
+    @Select("SELECT * FROM reservation WHERE lab_id = #{labId} AND reservation_date = #{date} " +
+            "AND status IN ('APPROVED', 'PENDING') AND deleted = 0 " +
+            "AND id != #{excludeId} " +
+            "AND #{startTime} < end_time AND #{endTime} > start_time")
+    List<Reservation> findConflicts(@Param("labId") Long labId, @Param("date") LocalDate date,
+                                    @Param("startTime") LocalTime startTime, @Param("endTime") LocalTime endTime,
+                                    @Param("excludeId") Long excludeId);
+
+    /**
      * 查询指定日期某实验室已占用时间段
      */
     @Select("SELECT start_time, end_time FROM reservation WHERE lab_id = #{labId} " +

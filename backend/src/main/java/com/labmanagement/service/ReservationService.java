@@ -182,6 +182,67 @@ public class ReservationService {
     }
 
     /**
+     * 查询冲突的预约
+     */
+    public List<Reservation> getConflicts(Long labId, LocalDate date, LocalTime startTime, LocalTime endTime, Long excludeId) {
+        return reservationMapper.findConflicts(labId, date, startTime, endTime, excludeId);
+    }
+
+    /**
+     * 强制审批预约（当存在冲突时，自动将冲突的预约设为拒绝）
+     * @return 被取消的冲突预约列表
+     */
+    @Transactional
+    public List<Reservation> forceApprove(Long id, String comment, Long approverId) {
+        Reservation reservation = reservationMapper.selectById(id);
+        if (reservation == null) {
+            throw new BusinessException(404, "预约不存在");
+        }
+        if (!"PENDING".equals(reservation.getStatus())) {
+            throw new BusinessException(ResultCode.RESERVATION_ALREADY_PROCESSED);
+        }
+
+        // 查询冲突的预约
+        List<Reservation> conflicts = reservationMapper.findConflicts(
+                reservation.getLabId(),
+                reservation.getReservationDate(),
+                reservation.getStartTime(),
+                reservation.getEndTime(),
+                id
+        );
+
+        // 将所有冲突的已审批预约设为拒绝
+        List<Reservation> canceledConflicts = conflicts.stream()
+                .filter(c -> "APPROVED".equals(c.getStatus()))
+                .collect(Collectors.toList());
+
+        for (Reservation conflict : canceledConflicts) {
+            conflict.setStatus("REJECTED");
+            conflict.setApproverId(approverId);
+            conflict.setApproveTime(LocalDateTime.now());
+            conflict.setApproveComment("因新预约冲突被管理员自动拒绝");
+            conflict.setUpdateTime(LocalDateTime.now());
+            reservationMapper.updateById(conflict);
+
+            operationLogService.log(approverId, "REJECT", "RESERVATION",
+                    "因冲突自动拒绝预约: " + conflict.getId(), null);
+        }
+
+        // 审批当前预约
+        reservation.setStatus("APPROVED");
+        reservation.setApproverId(approverId);
+        reservation.setApproveTime(LocalDateTime.now());
+        reservation.setApproveComment(comment);
+        reservation.setUpdateTime(LocalDateTime.now());
+        reservationMapper.updateById(reservation);
+
+        operationLogService.log(approverId, "APPROVE", "RESERVATION",
+                "强制审批预约: " + id + "，取消了 " + canceledConflicts.size() + " 个冲突预约", null);
+
+        return canceledConflicts;
+    }
+
+    /**
      * 获取当前登录用户ID
      */
     private Long getCurrentUserId() {
