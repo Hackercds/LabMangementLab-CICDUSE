@@ -3,7 +3,7 @@ package com.labmanagement.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.labmanagement.common.exception.BusinessException;
 import com.labmanagement.common.exception.ConflictException;
 import com.labmanagement.common.result.ResultCode;
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationService {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final ReservationMapper reservationMapper;
     private final OperationLogService operationLogService;
     private final SystemConfigService systemConfigService;
@@ -96,7 +97,7 @@ public class ReservationService {
             throw new BusinessException(ResultCode.RESERVATION_ALREADY_PROCESSED);
         }
 
-        String beforeSnapshot = JSON.toJSONString(reservation);
+        String beforeSnapshot = MAPPER.writeValueAsString(reservation);
 
         if ("APPROVED".equals(status)) {
             int conflictCount = reservationMapper.countAllConflictsForUpdate(
@@ -140,7 +141,7 @@ public class ReservationService {
                     reservation.setUpdateTime(LocalDateTime.now());
                     reservationMapper.updateById(reservation);
 
-                    String afterSnapshot = JSON.toJSONString(reservation);
+                    String afterSnapshot = MAPPER.writeValueAsString(reservation);
 
                     operationLogService.logWithSnapshot(approverId, "APPROVE", "RESERVATION",
                             "自动审批预约: " + id + "，取消了 " + conflicts.size() + " 个冲突预约", null,
@@ -159,7 +160,7 @@ public class ReservationService {
         reservation.setUpdateTime(LocalDateTime.now());
         reservationMapper.updateById(reservation);
 
-        String afterSnapshot = JSON.toJSONString(reservation);
+        String afterSnapshot = MAPPER.writeValueAsString(reservation);
 
         operationLogService.logWithSnapshot(approverId, "APPROVE", "RESERVATION",
                 "审批预约: " + id + " -> " + status, null, beforeSnapshot, afterSnapshot);
@@ -223,7 +224,7 @@ public class ReservationService {
             throw new BusinessException(ResultCode.RESERVATION_ALREADY_PROCESSED);
         }
 
-        String beforeSnapshot = JSON.toJSONString(reservation);
+        String beforeSnapshot = MAPPER.writeValueAsString(reservation);
 
         List<Reservation> conflicts = reservationMapper.findConflicts(
                 reservation.getLabId(),
@@ -256,7 +257,7 @@ public class ReservationService {
         reservation.setUpdateTime(LocalDateTime.now());
         reservationMapper.updateById(reservation);
 
-        String afterSnapshot = JSON.toJSONString(reservation);
+        String afterSnapshot = MAPPER.writeValueAsString(reservation);
 
         operationLogService.logWithSnapshot(approverId, "APPROVE", "RESERVATION",
                 "强制审批预约: " + id + "，取消了 " + canceledConflicts.size() + " 个冲突预约", null,
