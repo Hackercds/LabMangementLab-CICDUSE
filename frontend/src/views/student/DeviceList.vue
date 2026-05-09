@@ -26,6 +26,9 @@
       </el-form-item>
     </el-form>
     <el-table :data="tableData" border v-loading="loading">
+      <template #empty>
+        <el-empty description="暂无设备数据" />
+      </template>
       <el-table-column prop="name" label="设备名称" width="150" />
       <el-table-column prop="model" label="型号" width="120" />
       <el-table-column prop="serialNumber" label="序列号" width="150" />

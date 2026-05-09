@@ -5,12 +5,12 @@
         <h1>实验室管理系统</h1>
         <p>欢迎使用实验室管理系统</p>
       </div>
-      <el-form :model="form" label-width="80px" class="login-form">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="80px" class="login-form">
         <el-form-item label="账号" prop="username">
           <el-input v-model="form.username" placeholder="请输入学号/工号" prefix-icon="el-icon-user" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" prefix-icon="el-icon-lock" />
+          <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" prefix-icon="el-icon-lock" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleLogin" :loading="loading" style="width: 100%;">
@@ -34,17 +34,21 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
+const formRef = ref(null)
 const form = ref({
   username: '',
   password: ''
 })
 const loading = ref(false)
 
+const rules = {
+  username: [{ required: true, message: '请输入学号/工号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
 async function handleLogin() {
-  if (!form.value.username || !form.value.password) {
-    ElMessage.warning('请输入账号和密码')
-    return
-  }
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
   loading.value = true
   try {
     const res = await login(form.value)

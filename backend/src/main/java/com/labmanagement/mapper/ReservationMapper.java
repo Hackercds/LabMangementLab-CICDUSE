@@ -28,6 +28,23 @@ public interface ReservationMapper extends BaseMapper<Reservation> {
                           @Param("excludeId") Long excludeId);
 
     /**
+     * 带悲观锁检测时间段冲突（用于审批流程，锁住冲突范围内的行）
+     */
+    @Select("SELECT COUNT(*) FROM reservation WHERE lab_id = #{labId} AND reservation_date = #{date} " +
+            "AND status IN ('APPROVED', 'PENDING') AND deleted = 0 AND id != #{excludeId} " +
+            "AND #{startTime} < end_time AND #{endTime} > start_time FOR UPDATE")
+    int countAllConflictsForUpdate(@Param("labId") Long labId, @Param("date") LocalDate date,
+                                   @Param("startTime") LocalTime startTime, @Param("endTime") LocalTime endTime,
+                                   @Param("excludeId") Long excludeId);
+
+    /**
+     * 调用存储过程检测冲突（备选方案，与 countAllConflictsForUpdate 等价）
+     */
+    @Select("CALL sp_check_reservation_conflict(#{labId}, #{date}, #{startTime}, #{endTime}, @conflict_count)")
+    void callCheckConflictSp(@Param("labId") Long labId, @Param("date") LocalDate date,
+                             @Param("startTime") LocalTime startTime, @Param("endTime") LocalTime endTime);
+
+    /**
      * 检测时间段是否冲突（仅APPROVED状态的预约）
      */
     @Select("SELECT COUNT(*) FROM reservation WHERE lab_id = #{labId} AND reservation_date = #{date} " +

@@ -4,7 +4,7 @@ CREATE DATABASE IF NOT EXISTS lab_management DEFAULT CHARACTER SET utf8mb4 COLLA
 USE lab_management;
 
 -- 1. 用户表
-CREATE TABLE IF NOT EXISTS `user` (
+CREATE TABLE `user` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '学号/工号',
     `password` VARCHAR(255) NOT NULL COMMENT '加密密码',
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 2. 实验室表
-CREATE TABLE IF NOT EXISTS `lab` (
+CREATE TABLE `lab` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL UNIQUE COMMENT '实验室名称',
     `location` VARCHAR(100) COMMENT '位置',
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `lab` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='实验室表';
 
 -- 3. 设备表
-CREATE TABLE IF NOT EXISTS `device` (
+CREATE TABLE `device` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL COMMENT '设备名称',
     `model` VARCHAR(100) COMMENT '型号',
@@ -48,21 +48,16 @@ CREATE TABLE IF NOT EXISTS `device` (
     `lab_id` BIGINT NOT NULL COMMENT '所属实验室ID',
     `purchase_date` DATE COMMENT '购买日期',
     `status` ENUM('NORMAL','BORROWED','MAINTENANCE','SCRAPPED') DEFAULT 'NORMAL' COMMENT '状态',
-    `borrower_id` BIGINT COMMENT '借用人ID',
-    `borrow_time` DATETIME COMMENT '借用时间',
-    `expect_return_time` DATE COMMENT '预计归还时间',
-    `return_time` DATETIME COMMENT '实际归还时间',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除',
     `remark` VARCHAR(500) COMMENT '备注',
     INDEX idx_lab_id(lab_id),
-    INDEX idx_status(status),
-    INDEX idx_borrower_id(borrower_id)
+    INDEX idx_status(status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备表';
 
 -- 4. 预约记录表
-CREATE TABLE IF NOT EXISTS `reservation` (
+CREATE TABLE `reservation` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `user_id` BIGINT NOT NULL COMMENT '预约人ID',
     `lab_id` BIGINT NOT NULL COMMENT '实验室ID',
@@ -84,8 +79,26 @@ CREATE TABLE IF NOT EXISTS `reservation` (
     INDEX idx_status(status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='预约记录表';
 
--- 5. 耗材表
-CREATE TABLE IF NOT EXISTS `consumable` (
+-- 5. 设备借用历史表
+CREATE TABLE `device_borrow_history` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `device_id` BIGINT NOT NULL COMMENT '设备ID',
+    `borrower_id` BIGINT NOT NULL COMMENT '借用人ID',
+    `borrow_time` DATETIME NOT NULL COMMENT '借用时间',
+    `expect_return_time` DATE NOT NULL COMMENT '预计归还时间',
+    `actual_return_time` DATETIME COMMENT '实际归还时间',
+    `approver_id` BIGINT COMMENT '审批人ID',
+    `status` ENUM('BORROWING','RETURNED','OVERDUE') DEFAULT 'BORROWING' COMMENT '状态',
+    `operation_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除',
+    INDEX idx_device_id(device_id),
+    INDEX idx_borrower_id(borrower_id),
+    INDEX idx_status(status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备借用历史表';
+
+-- 6. 耗材表
+CREATE TABLE `consumable` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL COMMENT '耗材名称',
     `specification` VARCHAR(100) COMMENT '规格',
@@ -100,8 +113,8 @@ CREATE TABLE IF NOT EXISTS `consumable` (
     `remark` VARCHAR(500) COMMENT '备注'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='耗材表';
 
--- 6. 耗材出入库记录表
-CREATE TABLE IF NOT EXISTS `consumable_log` (
+-- 7. 耗材出入库记录表
+CREATE TABLE `consumable_log` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `consumable_id` BIGINT NOT NULL COMMENT '耗材ID',
     `operation_type` ENUM('IN','OUT') NOT NULL COMMENT '操作类型：入库/出库',
@@ -116,8 +129,8 @@ CREATE TABLE IF NOT EXISTS `consumable_log` (
     INDEX idx_operation_time(operation_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='耗材出入库记录表';
 
--- 7. 公告表
-CREATE TABLE IF NOT EXISTS `announcement` (
+-- 8. 公告表
+CREATE TABLE `announcement` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `title` VARCHAR(200) NOT NULL COMMENT '标题',
     `content` TEXT COMMENT '内容',
@@ -133,8 +146,8 @@ CREATE TABLE IF NOT EXISTS `announcement` (
     INDEX idx_publish_time(publish_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
 
--- 8. 操作日志表
-CREATE TABLE IF NOT EXISTS `operation_log` (
+-- 9. 操作日志表
+CREATE TABLE `operation_log` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `operator_id` BIGINT COMMENT '操作人ID',
     `operation_time` DATETIME COMMENT '操作时间',
@@ -142,6 +155,8 @@ CREATE TABLE IF NOT EXISTS `operation_log` (
     `module` VARCHAR(50) COMMENT '操作模块',
     `description` VARCHAR(1000) COMMENT '内容描述',
     `ip_address` VARCHAR(50) COMMENT 'IP地址',
+    `before_snapshot` JSON COMMENT '操作前数据快照',
+    `after_snapshot` JSON COMMENT '操作后数据快照',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除',
     INDEX idx_operator_id(operator_id),
@@ -149,25 +164,7 @@ CREATE TABLE IF NOT EXISTS `operation_log` (
     INDEX idx_module(module)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
 
--- 初始化数据：预置管理员账号，密码是 admin123 (BCrypt加密)
-INSERT IGNORE INTO `user` (id, username, password, real_name, role, status) VALUES
-(1, 'admin', '$2b$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', '系统管理员', 'ADMIN', 'ENABLED')
-ON DUPLICATE KEY UPDATE password = '$2b$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', real_name = '系统管理员', role = 'ADMIN';
-
--- 预置几个实验室数据
-INSERT IGNORE INTO `lab` (name, location, capacity, device_count, status) VALUES
-('计算机实验室1号楼101', '1号楼101室', 50, 50, 'FREE'),
-('电子工程实验室2号楼203', '2号楼203室', 30, 25, 'FREE'),
-('创新实验室3号楼305', '3号楼305室', 20, 15, 'FREE');
-
--- 预置几个耗材数据
-INSERT IGNORE INTO `consumable` (name, specification, unit, current_stock, warning_threshold, location) VALUES
-('一次性手套', '中号', '包', 50, 10, '储物柜A1'),
-('打印纸', 'A4', '箱', 20, 5, '储物柜A2'),
-('U盘', '16GB', '个', 10, 3, '储物柜B1'),
-('网线', 'RJ45', '根', 15, 5, '储物柜B2');
-
--- 9. 系统配置表
+-- 10. 系统配置表
 CREATE TABLE IF NOT EXISTS `system_config` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `config_key` VARCHAR(64) NOT NULL UNIQUE COMMENT '配置键',
@@ -179,8 +176,25 @@ CREATE TABLE IF NOT EXISTS `system_config` (
     INDEX idx_config_key(config_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
+-- 初始化数据：预置管理员账号，密码是 admin123 (BCrypt加密)
+INSERT INTO `user` (username, password, real_name, role, status) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EHsM8', '系统管理员', 'ADMIN', 'ENABLED');
+
+-- 预置几个实验室数据
+INSERT INTO `lab` (name, location, capacity, device_count, status) VALUES
+('计算机实验室1号楼101', '1号楼101室', 50, 50, 'FREE'),
+('电子工程实验室2号楼203', '2号楼203室', 30, 25, 'FREE'),
+('创新实验室3号楼305', '3号楼305室', 20, 15, 'FREE');
+
+-- 预置几个耗材数据
+INSERT INTO `consumable` (name, specification, unit, current_stock, warning_threshold, location) VALUES
+('一次性手套', '中号', '包', 50, 10, '储物柜A1'),
+('打印纸', 'A4', '箱', 20, 5, '储物柜A2'),
+('U盘', '16GB', '个', 10, 3, '储物柜B1'),
+('网线', 'RJ45', '根', 15, 5, '储物柜B2');
+
 -- 初始化配置数据
 INSERT IGNORE INTO `system_config` (`config_key`, `config_value`, `description`) VALUES
-('auto_approve_teacher', 'false', '教师审批预约时是否自动审批无冲突预约（开启后自动通过无冲突预约）'),
+('auto_approve_teacher', 'false', '教师审批预约时是否自动审批无冲突预约'),
 ('reservation_max_days', '30', '最多可提前预约天数'),
 ('reservation_max_per_day', '3', '每个学生每天最多预约次数');

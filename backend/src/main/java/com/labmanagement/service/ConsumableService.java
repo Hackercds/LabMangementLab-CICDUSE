@@ -1,5 +1,6 @@
 package com.labmanagement.service;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -132,14 +133,16 @@ public class ConsumableService {
     }
 
     /**
-     * 入库
+     * 入库（带悲观锁，防止并发竞态）
      */
     @Transactional
     public void in(Long id, InRequest request, Long operatorId) {
-        Consumable consumable = consumableMapper.selectById(id);
+        Consumable consumable = consumableMapper.selectByIdForUpdate(id);
         if (consumable == null) {
             throw new BusinessException(404, "耗材不存在");
         }
+
+        String beforeSnapshot = JSON.toJSONString(consumable);
 
         // 更新库存
         BigDecimal newStock = consumable.getCurrentStock().add(request.getQuantity());
@@ -157,16 +160,19 @@ public class ConsumableService {
         log.setPurpose(request.getPurpose());
         consumableLogMapper.insert(log);
 
-        operationLogService.log(operatorId, "IN", "CONSUMABLE",
-                "耗材入库: " + id + ", 数量: " + request.getQuantity(), null);
+        String afterSnapshot = JSON.toJSONString(consumable);
+
+        operationLogService.logWithSnapshot(operatorId, "IN", "CONSUMABLE",
+                "耗材入库: " + id + ", 数量: " + request.getQuantity(), null,
+                beforeSnapshot, afterSnapshot);
     }
 
     /**
-     * 领用出库
+     * 领用出库（带悲观锁，防止并发超卖）
      */
     @Transactional
     public boolean out(Long id, UseRequest request, Long operatorId) {
-        Consumable consumable = consumableMapper.selectById(id);
+        Consumable consumable = consumableMapper.selectByIdForUpdate(id);
         if (consumable == null) {
             throw new BusinessException(404, "耗材不存在");
         }
@@ -175,6 +181,8 @@ public class ConsumableService {
         if (consumable.getCurrentStock().compareTo(request.getQuantity()) < 0) {
             throw new BusinessException(ResultCode.INSUFFICIENT_STOCK);
         }
+
+        String beforeSnapshot = JSON.toJSONString(consumable);
 
         // 更新库存
         BigDecimal newStock = consumable.getCurrentStock().subtract(request.getQuantity());
@@ -192,8 +200,11 @@ public class ConsumableService {
         log.setPurpose(request.getPurpose());
         consumableLogMapper.insert(log);
 
-        operationLogService.log(operatorId, "OUT", "CONSUMABLE",
-                "耗材领用: " + id + ", 数量: " + request.getQuantity(), null);
+        String afterSnapshot = JSON.toJSONString(consumable);
+
+        operationLogService.logWithSnapshot(operatorId, "OUT", "CONSUMABLE",
+                "耗材领用: " + id + ", 数量: " + request.getQuantity(), null,
+                beforeSnapshot, afterSnapshot);
 
         // 检查是否需要预警
         boolean needWarning = false;

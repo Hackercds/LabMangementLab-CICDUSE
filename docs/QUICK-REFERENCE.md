@@ -59,13 +59,10 @@ docker-compose up -d --build
 
 ```bash
 # 启动监控
-cd monitoring && ./monitor.sh start
+cd monitor && ./monitor.sh start
 
 # 停止监控
-cd monitoring && ./monitor.sh stop
-
-# 独立监控系统
-cd monitoring-system && ./quick-start.sh
+cd monitor && ./monitor.sh stop
 ```
 
 ---
@@ -250,16 +247,11 @@ redis-cli DBSIZE
 
 | 配置文件 | 路径 | 说明 |
 |----------|------|------|
-| 后端主配置 | `backend/src/main/resources/application.yml` | 主配置 |
-| 开发环境 | `backend/src/main/resources/application-dev.yml` | 开发配置 |
-| 测试环境 | `backend/src/main/resources/application-test.yml` | 测试配置 |
-| 生产环境 | `backend/src/main/resources/application-prod.yml` | 生产配置 |
-| 前端开发环境 | `frontend/.env.development` | 开发环境变量 |
-| 前端生产环境 | `frontend/.env.production` | 生产环境变量 |
+| 后端配置 | `backend/src/main/resources/application.yml` | 唯一配置文件（含dev/test/prod） |
+| 前端环境变量 | `frontend/.env.development` / `.env.production` | 前端环境变量 |
 | Docker配置 | `docker-compose.yml` | Docker编排 |
-| 部署配置 | `scripts/deploy.conf` | 部署参数 |
-| Prometheus | `monitoring/prometheus/prometheus.yml` | 监控配置 |
-| Grafana | `monitoring/grafana/grafana.ini` | 可视化配置 |
+| Prometheus | `monitor/prometheus/prometheus.yml` | 监控配置 |
+| Grafana | `monitor/grafana/grafana.ini` | 可视化配置 |
 
 ---
 
@@ -317,7 +309,7 @@ docker-compose logs -f frontend
 docker-compose logs -f
 
 # 监控日志
-tail -f monitoring/logs/monitor.log
+tail -f monitor/logs/monitor.log
 ```
 
 ### 常见问题
@@ -369,23 +361,21 @@ git log --oneline -10
 
 ## 🔐 默认账号
 
+> **注意：以下为默认示例。生产环境请务必修改密码！**
+
 | 系统 | 用户名 | 密码 | 说明 |
 |------|--------|------|------|
-| 管理员 | admin | admin123 | 系统管理员 |
-| 教师 | teacher | teacher123 | 教师账号 |
-| 学生 | student | student123 | 学生账号 |
-| Grafana | admin | admin123 | 监控面板 |
-| MySQL | root | root123456 | 数据库 |
-| Redis | - | - | 无密码 |
+| 管理员 | admin | admin123 | 系统管理员（默认，可修改） |
+| Grafana | admin | 见配置 | 监控面板（按 grafana.ini 中设置） |
+| MySQL | root | 见 .env | 数据库（MYSQL_ROOT_PASSWORD） |
+| Redis | - | 见 .env | 默认无密码 |
 
 ---
 
-## 📞 联系方式
+## 联系方式
 
-- **技术支持**: tech-support@example.com
-- **问题反馈**: https://github.com/your-repo/lab-management-system/issues
 - **文档中心**: docs/
 
 ---
 
-**最后更新**: 2024年
+**最后更新**: 2026-05-10

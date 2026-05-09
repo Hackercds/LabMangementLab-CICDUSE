@@ -1,8 +1,7 @@
 # 实验室管理系统 - 项目架构文档
 
-> 版本: 1.0.0  
-> 架构师: Lab Management Team  
-> 更新日期: 2024年
+> 版本: 1.1.0
+> 更新日期: 2026-05-10
 
 ---
 
@@ -32,7 +31,7 @@
 | 层级 | 技术选型 | 版本 |
 |------|----------|------|
 | **前端** | Vue 3 + Element Plus + Pinia + Vite | 3.2 / 2.2 / 2.0 / 4.0 |
-| **后端** | Spring Boot + MyBatis-Plus + Spring Security | 2.7.0 / 3.5.2 |
+| **后端** | Spring Boot + MyBatis-Plus + Spring Security | 3.0.12 / 3.5.3.1 |
 | **数据库** | MySQL + Redis | 8.0 / 7.0 |
 | **消息队列** | RabbitMQ (可选) | 3.12 |
 | **容器化** | Docker + Docker Compose | 24.0 / 2.20 |
@@ -223,7 +222,7 @@ lab-management-system/
 │   ├── health-check.sh               # 健康检查
 │   └── blue-green-deploy.sh          # 蓝绿部署
 │
-├── monitoring/                       # 监控系统
+├── monitor/                          # 监控系统
 │   ├── prometheus/
 │   │   ├── prometheus.yml            # Prometheus配置
 │   │   └── alert_rules.yml           # 告警规则
@@ -245,7 +244,6 @@ lab-management-system/
 │   ├── monitor.sh / monitor.bat      # 监控启动脚本
 │   └── dashboards/                   # Dashboard JSON文件
 │
-├── monitoring-system/                # 独立监控系统(可复用)
 │   ├── setup.sh / setup.bat          # 完整管理脚本
 │   ├── quick-start.sh / quick-start.bat  # 快速启动
 │   └── README.md                     # 使用文档
@@ -254,8 +252,9 @@ lab-management-system/
 │   ├── CONFIGURATION.md              # 配置说明
 │   ├── RELIABILITY.md                # 可靠性设计
 │   ├── CI-CD.md                      # CI/CD文档
-│   ├── API.md                        # API文档
-│   └── DEPLOYMENT.md                 # 部署文档
+│   ├── 详细设计文档.md              # 详细设计
+│   ├── TECH-STACK.md                 # 技术栈
+│   └── QUICK-REFERENCE.md            # 快速参考
 │
 ├── docker-compose.yml                # 开发环境Docker配置
 ├── docker-compose.prod.yml           # 生产环境Docker配置
@@ -287,7 +286,7 @@ lab-management-system/
 **核心类:**
 - `SecurityConfig`: Spring Security配置
 - `JwtUtils`: JWT工具类
-- `JwtFilter`: JWT过滤器
+- `JwtAuthenticationFilter`: JWT过滤器
 - `UserDetailsServiceImpl`: 用户详情服务
 
 ### 4.2 业务模块
@@ -631,9 +630,9 @@ spec:
 ./scripts/service.sh logs backend   # 查看后端日志
 
 # 监控系统
-./monitoring/monitor.sh start       # 启动监控
-./monitoring/monitor.sh stop        # 停止监控
-./monitoring/monitor.sh status      # 查看监控状态
+./monitor/monitor.sh start       # 启动监控
+./monitor/monitor.sh stop        # 停止监控
+./monitor/monitor.sh status      # 查看监控状态
 
 # 部署
 ./scripts/deploy.sh                 # 执行部署
@@ -728,23 +727,23 @@ public CorsConfigurationSource corsConfigurationSource() {
 
 ### A. 配置参数说明
 
-详见: [CONFIGURATION.md](docs/CONFIGURATION.md)
+详见: CONFIGURATION.md
 
 ### B. API接口文档
 
-详见: [API.md](docs/API.md)
+详见: 详细设计文档.md 第5章
 
 ### C. 部署指南
 
-详见: [DEPLOYMENT.md](docs/DEPLOYMENT.md)
+详见: docker-compose.yml 和 CI-CD.md
 
 ### D. 版本历史
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
-| 1.0.0 | 2024-01 | 初始版本发布 |
+| 1.1.0 | 2026-05-10 | 数据库重构(device_borrow_history)、操作日志快照、并发安全性修复 |
+| 1.0.0 | 2026-04 | 初始版本发布 |
 
 ---
 
-**文档维护**: Lab Management Team  
-**最后更新**: 2024年
+**最后更新**: 2026-05-10

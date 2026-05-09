@@ -1,12 +1,15 @@
 package com.labmanagement.service;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.labmanagement.common.exception.BusinessException;
 import com.labmanagement.common.result.ResultCode;
 import com.labmanagement.entity.Device;
+import com.labmanagement.entity.DeviceBorrowHistory;
 import com.labmanagement.mapper.DeviceMapper;
+import com.labmanagement.mapper.DeviceBorrowHistoryMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ import java.util.List;
 public class DeviceService {
 
     private final DeviceMapper deviceMapper;
+    private final DeviceBorrowHistoryMapper deviceBorrowHistoryMapper;
     private final OperationLogService operationLogService;
 
     @lombok.Data
@@ -111,11 +115,11 @@ public class DeviceService {
     }
 
     /**
-     * 借用设备
+     * 借用设备（带悲观锁，防止并发竞态）
      */
     @Transactional
     public void borrow(Long id, BorrowRequest request, Long borrowerId) {
-        Device device = deviceMapper.selectById(id);
+        Device device = deviceMapper.selectByIdForUpdate(id);
         if (device == null) {
             throw new BusinessException(404, "设备不存在");
         }
@@ -123,21 +127,34 @@ public class DeviceService {
             throw new BusinessException(ResultCode.DEVICE_NOT_AVAILABLE);
         }
 
+        String beforeSnapshot = JSON.toJSONString(device);
+
+        // 更新设备状态为借用中
         device.setStatus("BORROWED");
-        device.setBorrowerId(borrowerId);
-        device.setBorrowTime(LocalDateTime.now());
-        device.setExpectReturnTime(request.getExpectReturnTime());
         deviceMapper.updateById(device);
 
-        operationLogService.log(borrowerId, "BORROW", "DEVICE", "借用设备: " + id, null);
+        // 在借用历史表中插入记录
+        DeviceBorrowHistory history = new DeviceBorrowHistory();
+        history.setDeviceId(id);
+        history.setBorrowerId(borrowerId);
+        history.setBorrowTime(LocalDateTime.now());
+        history.setExpectReturnTime(request.getExpectReturnTime());
+        history.setStatus("BORROWING");
+        history.setOperationTime(LocalDateTime.now());
+        deviceBorrowHistoryMapper.insert(history);
+
+        String afterSnapshot = JSON.toJSONString(device);
+
+        operationLogService.logWithSnapshot(borrowerId, "BORROW", "DEVICE",
+                "借用设备: " + id, null, beforeSnapshot, afterSnapshot);
     }
 
     /**
-     * 归还设备
+     * 归还设备（带悲观锁，防止并发竞态）
      */
     @Transactional
     public void returnDevice(Long id, Long operatorId) {
-        Device device = deviceMapper.selectById(id);
+        Device device = deviceMapper.selectByIdForUpdate(id);
         if (device == null) {
             throw new BusinessException(404, "设备不存在");
         }
@@ -145,11 +162,29 @@ public class DeviceService {
             throw new BusinessException(400, "设备当前不在借用中");
         }
 
+        String beforeSnapshot = JSON.toJSONString(device);
+
+        // 更新设备状态为正常
         device.setStatus("NORMAL");
-        device.setReturnTime(LocalDateTime.now());
-        device.setBorrowerId(null);
         deviceMapper.updateById(device);
 
-        operationLogService.log(operatorId, "RETURN", "DEVICE", "归还设备: " + id, null);
+        // 更新借用历史表中的对应记录
+        LambdaQueryWrapper<DeviceBorrowHistory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DeviceBorrowHistory::getDeviceId, id);
+        wrapper.eq(DeviceBorrowHistory::getStatus, "BORROWING");
+        wrapper.orderByDesc(DeviceBorrowHistory::getBorrowTime);
+        DeviceBorrowHistory history = deviceBorrowHistoryMapper.selectOne(wrapper);
+
+        if (history != null) {
+            history.setActualReturnTime(LocalDateTime.now());
+            history.setStatus("RETURNED");
+            history.setOperationTime(LocalDateTime.now());
+            deviceBorrowHistoryMapper.updateById(history);
+        }
+
+        String afterSnapshot = JSON.toJSONString(device);
+
+        operationLogService.logWithSnapshot(operatorId, "RETURN", "DEVICE",
+                "归还设备: " + id, null, beforeSnapshot, afterSnapshot);
     }
 }

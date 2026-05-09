@@ -21,7 +21,7 @@ services:
       - '--web.enable-lifecycle'
       - '--web.enable-admin-api'
     networks:
-      - monitoring
+      - lab-network
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -46,7 +46,7 @@ services:
       - '--storage.path=/alertmanager'
       - '--web.external-url=http://localhost:9093'
     networks:
-      - monitoring
+      - lab-network
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
       interval: 30s
@@ -71,7 +71,7 @@ services:
       - GF_SERVER_ROOT_URL=http://localhost:3001
       - GF_INSTALL_PLUGINS=redis-datasource,grafana-clock-panel,grafana-piechart-panel
     networks:
-      - monitoring
+      - lab-network
     depends_on:
       - prometheus
       - loki
@@ -94,7 +94,7 @@ services:
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
-      - monitoring
+      - lab-network
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3100/ready"]
       interval: 30s
@@ -113,7 +113,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
     networks:
-      - monitoring
+      - lab-network
     depends_on:
       - loki
 
@@ -134,7 +134,7 @@ services:
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     networks:
-      - monitoring
+      - lab-network
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.0
@@ -153,7 +153,7 @@ services:
     devices:
       - /dev/kmsg
     networks:
-      - monitoring
+      - lab-network
 
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.24.0
@@ -165,7 +165,7 @@ services:
     volumes:
       - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
     networks:
-      - monitoring
+      - lab-network
 
   mysql-exporter:
     image: prom/mysqld-exporter:v0.15.0
@@ -177,7 +177,7 @@ services:
     environment:
       - DATA_SOURCE_NAME=root:root123456@(mysql:3306)/lab_management
     networks:
-      - monitoring
+      - lab-network
 
   redis-exporter:
     image: oliver006/redis_exporter:v1.50.0
@@ -189,10 +189,10 @@ services:
     environment:
       - REDIS_ADDR=redis://redis:6379
     networks:
-      - monitoring
+      - lab-network
 
 networks:
-  monitoring:
+  lab-network:
     driver: bridge
     name: lab-monitoring
 

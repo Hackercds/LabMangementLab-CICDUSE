@@ -44,8 +44,8 @@
 
     <div v-if="selectedSlots.length">
       <el-divider>预约信息</el-divider>
-      <el-form :model="reservationForm" label-width="100px">
-        <el-form-item label="预约事由">
+      <el-form :model="reservationForm" :rules="reservationRules" ref="reservationFormRef" label-width="100px">
+        <el-form-item label="预约事由" prop="purpose">
           <el-input v-model="reservationForm.purpose" placeholder="请输入预约事由" />
         </el-form-item>
         <el-form-item label="参与人数">
@@ -69,6 +69,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const labList = ref([])
+const reservationFormRef = ref(null)
 const queryForm = ref({
   labId: null,
   date: null
@@ -80,6 +81,11 @@ const reservationForm = ref({
   participantCount: 1
 })
 const submitting = ref(false)
+
+const reservationRules = {
+  purpose: [{ required: true, message: '请输入预约事由', trigger: 'blur' }],
+  participantCount: [{ required: true, message: '请填写参与人数', trigger: 'blur' }]
+}
 
 // 生成时间段，每节课1小时
 const timeSlots = ref([])
@@ -152,10 +158,8 @@ async function handleSubmit() {
     ElMessage.warning('请选择至少一个时间段')
     return
   }
-  if (!reservationForm.value.purpose) {
-    ElMessage.warning('请输入预约事由')
-    return
-  }
+  const valid = await reservationFormRef.value.validate().catch(() => false)
+  if (!valid) return
 
   // 合并连续时间段
   const sorted = [...selectedSlots.value].sort((a, b) => a.start - b.start)

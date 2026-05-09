@@ -46,26 +46,6 @@ public class Device {
     private String status;
 
     /**
-     * 借用人ID
-     */
-    private Long borrowerId;
-
-    /**
-     * 借用时间
-     */
-    private LocalDateTime borrowTime;
-
-    /**
-     * 预计归还时间
-     */
-    private LocalDate expectReturnTime;
-
-    /**
-     * 实际归还时间
-     */
-    private LocalDateTime returnTime;
-
-    /**
      * 创建时间
      */
     private LocalDateTime createTime;

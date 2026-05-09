@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DEPLOY_HOST', defaultValue: 'maco.hackercd.cn', description: '部署目标机器IP（必填）')
-        string(name: 'DOCKER_HOST_URI', defaultValue: 'tcp://192.168.3.188:2375', description: '远程Docker TCP地址，如 tcp://192.168.3.188:2375')
-        string(name: 'BACKEND_PORT', defaultValue: '10081', description: '后端服务端口')
-        string(name: 'FRONTEND_PORT', defaultValue: '10080', description: '前端服务端口')
+        string(name: 'DEPLOY_HOST', defaultValue: '', description: '部署目标机器IP（必填）')
+        string(name: 'DOCKER_HOST_URI', defaultValue: '', description: '远程Docker TCP地址，如 tcp://192.168.x.x:2375')
+        string(name: 'BACKEND_PORT', defaultValue: '8081', description: '后端服务端口')
+        string(name: 'FRONTEND_PORT', defaultValue: '80', description: '前端服务端口')
         choice(name: 'SPRING_PROFILES_ACTIVE', choices: ['prod', 'test'], description: 'Spring运行环境')
         booleanParam(name: 'SKIP_DB_INIT', defaultValue: false, description: '跳过数据库初始化（已有数据时勾选）')
         booleanParam(name: 'CLEAN_VOLUMES', defaultValue: false, description: '清理旧数据卷（谨慎！会清空数据）')

@@ -18,9 +18,9 @@
 
 | 技术 | 版本 | 用途 | 说明 |
 |------|------|------|------|
-| Spring Boot | 2.7.0 | 后端框架 | 简化Spring应用开发 |
-| Spring Security | 2.7.0 | 安全框架 | 认证授权 |
-| MyBatis-Plus | 3.5.2 | ORM框架 | 增强版MyBatis |
+| Spring Boot | 3.0.12 | 后端框架 | 简化Spring应用开发 |
+| Spring Security | 6.x (BOM管理) | 安全框架 | 认证授权 |
+| MyBatis-Plus | 3.5.3.1 | ORM框架 | 增强版MyBatis |
 | JWT | 0.11.5 | 认证方案 | JSON Web Token |
 | Lombok | 1.18.28 | 代码简化 | 减少样板代码 |
 | Hutool | 5.8.20 | 工具库 | Java工具集 |
@@ -103,21 +103,21 @@
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-web</artifactId>
-        <version>2.7.0</version>
+        <!-- 版本由 spring-boot-starter-parent 3.0.12 管理 -->
     </dependency>
-    
+
     <!-- Spring Security -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-security</artifactId>
-        <version>2.7.0</version>
+        <!-- 版本由 spring-boot-starter-parent 管理 -->
     </dependency>
-    
+
     <!-- MyBatis-Plus -->
     <dependency>
         <groupId>com.baomidou</groupId>
         <artifactId>mybatis-plus-boot-starter</artifactId>
-        <version>3.5.2</version>
+        <version>3.5.3.1</version>
     </dependency>
     
     <!-- JWT -->
@@ -271,4 +271,4 @@ API (接口层)
 ---
 
 **文档维护**: Lab Management Team  
-**最后更新**: 2024年
+**最后更新**: 2026年

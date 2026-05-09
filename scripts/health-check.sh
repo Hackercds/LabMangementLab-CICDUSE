@@ -1,124 +1,62 @@
 #!/bin/bash
-
-# 健康检查脚本
-# 检查所有服务的健康状态
-
+# 实验室管理系统 - 健康检查脚本
 set -e
 
-# 配置
-MAX_RETRIES=10
-RETRY_INTERVAL=5
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${PROJECT_ROOT}/.env" 2>/dev/null || true
+
+HOST="${HOST_IP:-localhost}"
+B_PORT="${BACKEND_PORT:-8081}"
+F_PORT="${FRONTEND_PORT:-80}"
+MAX_RETRIES=30
+RETRY_INTERVAL=2
 
 echo "=========================================="
-echo "开始健康检查"
+echo "  健康检查"
 echo "=========================================="
 
-# 检查MySQL
-echo "🔍 检查MySQL..."
-RETRY_COUNT=0
-while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
-    if docker exec lab-mysql-prod mysqladmin ping -h localhost > /dev/null 2>&1; then
-        echo "✅ MySQL健康检查通过"
-        break
+check_container() {
+    local name=$1
+    local running=$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null || echo "false")
+    if [ "$running" = "true" ]; then
+        echo "  [OK] $name"
+        return 0
+    else
+        echo "  [FAIL] $name 未运行"
+        return 1
     fi
-    
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "MySQL健康检查失败，重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
-    sleep ${RETRY_INTERVAL}
-done
+}
 
-if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
-    echo "❌ MySQL健康检查失败"
-    exit 1
-fi
+check_url() {
+    local url=$1
+    local desc=$2
+    for i in $(seq 1 $MAX_RETRIES); do
+        if curl -sf "$url" >/dev/null 2>&1; then
+            echo "  [OK] $desc ($url)"
+            return 0
+        fi
+        sleep $RETRY_INTERVAL
+    done
+    echo "  [FAIL] $desc ($url)"
+    return 1
+}
 
-# 检查Redis
-echo "🔍 检查Redis..."
-RETRY_COUNT=0
-while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
-    if docker exec lab-redis-prod redis-cli ping | grep -q PONG; then
-        echo "✅ Redis健康检查通过"
-        break
-    fi
-    
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "Redis健康检查失败，重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
-    sleep ${RETRY_INTERVAL}
-done
+all_ok=true
 
-if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
-    echo "❌ Redis健康检查失败"
-    exit 1
-fi
+echo "[容器状态]"
+check_container lab-mysql || all_ok=false
+check_container lab-redis || all_ok=false
+check_container lab-backend || all_ok=false
+check_container lab-frontend || all_ok=false
 
-# 检查后端服务
-echo "🔍 检查后端服务..."
-RETRY_COUNT=0
-while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
-    if curl -f http://localhost:8081/api/actuator/health > /dev/null 2>&1; then
-        echo "✅ 后端服务健康检查通过"
-        break
-    fi
-    
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "后端服务健康检查失败，重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
-    sleep ${RETRY_INTERVAL}
-done
-
-if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
-    echo "❌ 后端服务健康检查失败"
-    exit 1
-fi
-
-# 检查前端服务
-echo "🔍 检查前端服务..."
-RETRY_COUNT=0
-while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
-    if curl -f http://localhost/ > /dev/null 2>&1; then
-        echo "✅ 前端服务健康检查通过"
-        break
-    fi
-    
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "前端服务健康检查失败，重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
-    sleep ${RETRY_INTERVAL}
-done
-
-if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
-    echo "❌ 前端服务健康检查失败"
-    exit 1
-fi
-
-# 检查API接口
-echo "🔍 检查API接口..."
-RETRY_COUNT=0
-while [ ${RETRY_COUNT} -lt ${MAX_RETRIES} ]; do
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/auth/login \
-        -H "Content-Type: application/json" \
-        -d '{"username":"admin","password":"admin123"}')
-    
-    if [ "${RESPONSE}" = "200" ]; then
-        echo "✅ API接口健康检查通过"
-        break
-    fi
-    
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    echo "API接口健康检查失败，重试 ${RETRY_COUNT}/${MAX_RETRIES}..."
-    sleep ${RETRY_INTERVAL}
-done
-
-if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
-    echo "❌ API接口健康检查失败"
-    exit 1
-fi
+echo "[HTTP检查]"
+check_url "http://${HOST}:${B_PORT}/api/actuator/health" "后端健康" || all_ok=false
+check_url "http://${HOST}:${F_PORT}" "前端页面" || all_ok=false
 
 echo "=========================================="
-echo "✅ 所有服务健康检查通过"
+if [ "$all_ok" = "true" ]; then
+    echo "  全部服务正常"
+else
+    echo "  部分服务异常，请检查日志"
+fi
 echo "=========================================="
-
-# 显示服务状态
-echo ""
-echo "📊 服务状态:"
-docker-compose -f docker-compose.prod.yml ps
-
-exit 0

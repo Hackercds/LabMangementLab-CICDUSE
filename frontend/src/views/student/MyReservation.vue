@@ -1,7 +1,10 @@
 <template>
   <div>
     <h2>我的预约</h2>
-    <el-table :data="tableData" border loading="loading">
+    <el-table :data="tableData" border v-loading="loading">
+      <template #empty>
+        <el-empty description="暂无预约记录" />
+      </template>
       <el-table-column prop="id" label="编号" width="80" />
       <el-table-column prop="labName" label="实验室" width="150" />
       <el-table-column prop="reservationDate" label="日期" width="120" />

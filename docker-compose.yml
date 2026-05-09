@@ -7,10 +7,10 @@ services:
     container_name: lab-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root123456
-      MYSQL_DATABASE: lab_management
-      MYSQL_USER: labuser
-      MYSQL_PASSWORD: lab123456
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lab_management}
+      MYSQL_USER: ${MYSQL_USER:-labuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lab123456}
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
@@ -60,15 +60,15 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: lab_management
-      DB_USERNAME: labuser
-      DB_PASSWORD: lab123456
+      DB_USERNAME: ${MYSQL_USER:-labuser}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-lab123456}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
       REDIS_DATABASE: 0
-      JWT_SECRET: lab-management-jwt-secret-key-2024-production
-      JWT_EXPIRATION: 86400000
-      CORS_ALLOWED_ORIGINS: "*"
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
       JAVA_OPTS: -Xms512m -Xmx1024m -XX:+UseG1GC
     ports:
       - "8081:8081"

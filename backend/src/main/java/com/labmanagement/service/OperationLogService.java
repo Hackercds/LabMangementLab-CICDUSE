@@ -38,6 +38,27 @@ public class OperationLogService {
     }
 
     /**
+     * 记录操作日志（含操作前后数据快照）
+     * @param beforeSnapshot 操作前数据JSON
+     * @param afterSnapshot  操作后数据JSON
+     */
+    public void logWithSnapshot(Long operatorId, String operationType, String module,
+                                 String description, String ipAddress,
+                                 String beforeSnapshot, String afterSnapshot) {
+        OperationLog log = new OperationLog();
+        log.setOperatorId(operatorId);
+        log.setOperationType(operationType);
+        log.setModule(module);
+        log.setDescription(description);
+        log.setIpAddress(ipAddress);
+        log.setBeforeSnapshot(beforeSnapshot);
+        log.setAfterSnapshot(afterSnapshot);
+        log.setOperationTime(LocalDateTime.now());
+        log.setCreateTime(LocalDateTime.now());
+        operationLogMapper.insert(log);
+    }
+
+    /**
      * 分页查询日志
      */
     public IPage<OperationLog> pageList(Integer current, Integer size, Long operatorId, String module, String operationType) {

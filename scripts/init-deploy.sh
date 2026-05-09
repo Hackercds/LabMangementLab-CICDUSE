@@ -9,6 +9,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"; }
@@ -23,9 +24,9 @@ echo -e "${NC}"
 
 load_env() {
     log_step "加载配置..."
-    if [ -f "${SCRIPT_DIR}/.env" ]; then
+    if [ -f "${PROJECT_ROOT}/.env" ]; then
         set -a
-        source "${SCRIPT_DIR}/.env"
+        source "${PROJECT_ROOT}/.env"
         set +a
         log_info "配置加载完成 HOST_IP=${HOST_IP} BACKEND_PORT=${BACKEND_PORT}"
     else
@@ -56,8 +57,8 @@ stop_old_containers() {
 
 build_images() {
     log_step "构建Docker镜像..."
-    docker build -t lab-backend ./backend
-    docker build -t lab-frontend ./frontend
+    docker build -t lab-backend ${PROJECT_ROOT}/backend
+    docker build -t lab-frontend ${PROJECT_ROOT}/frontend
     log_info "Docker镜像构建完成"
 }
 
@@ -94,7 +95,7 @@ start_services() {
         sleep 5
     done
 
-    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} < ${SCRIPT_DIR}/backend/src/main/resources/db/schema.sql
+    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} < ${PROJECT_ROOT}/backend/src/main/resources/db/schema.sql
 
     docker run -d \
         --name lab-redis \
@@ -175,6 +176,10 @@ show_status() {
     echo "  前端页面: http://${HOST_IP}:${FRONTEND_PORT}"
     echo "  后端API:  http://${HOST_IP}:${BACKEND_PORT}/api"
     echo "  健康检查: http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health"
+    if [ "${MONITOR_ENABLED:-false}" = "true" ]; then
+        echo "  Grafana:   http://${HOST_IP}:3001 (admin/admin123)"
+        echo "  Prometheus: http://${HOST_IP}:9090"
+    fi
     echo ""
     echo "默认账号:"
     echo "  管理员: admin / admin123"
@@ -185,6 +190,31 @@ show_status() {
     echo ""
 }
 
+start_monitoring() {
+    if [ "${MONITOR_ENABLED:-false}" != "true" ]; then
+        log_info "监控未启用（设置 MONITOR_ENABLED=true 可自动部署监控）"
+        return
+    fi
+
+    log_step "部署监控服务..."
+    cd "${PROJECT_ROOT}/monitor"
+
+    # 停止旧监控容器
+    docker stop lab-prometheus lab-grafana 2>/dev/null || true
+    docker rm lab-prometheus lab-grafana 2>/dev/null || true
+
+    docker-compose -f docker-compose.monitoring.yml up -d
+    cd "${PROJECT_ROOT}"
+
+    # 停止旧监控容器
+    docker stop lab-prometheus lab-grafana lab-alertmanager lab-loki lab-promtail lab-node-exporter lab-cadvisor lab-mysql-exporter lab-redis-exporter lab-blackbox-exporter 2>/dev/null || true
+    docker rm lab-prometheus lab-grafana lab-alertmanager lab-loki lab-promtail lab-node-exporter lab-cadvisor lab-mysql-exporter lab-redis-exporter lab-blackbox-exporter 2>/dev/null || true
+
+    docker-compose -f docker-compose.monitoring.yml up -d
+    cd "${SCRIPT_DIR}"
+    log_info "监控服务已启动"
+}
+
 main() {
     load_env
     check_docker
@@ -192,6 +222,7 @@ main() {
     build_images
     start_services
     wait_for_services
+    start_monitoring
     show_status
 }
 

@@ -45,6 +45,16 @@ public class OperationLog {
     private String ipAddress;
 
     /**
+     * 操作前数据快照
+     */
+    private String beforeSnapshot;
+
+    /**
+     * 操作后数据快照
+     */
+    private String afterSnapshot;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

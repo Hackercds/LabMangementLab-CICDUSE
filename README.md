@@ -94,41 +94,18 @@ lab-management-system/
 │   ├── requirements.txt            # Python 依赖
 │   └── run_tests.py                # 测试执行入口
 │
-├── scripts/                        # 运维脚本
-│   ├── deploy.conf                 # 部署配置（端口/路径/环境变量）
-│   ├── start.sh / start.bat        # 一键启动
-│   ├── stop.sh / stop.bat          # 一键停止
-│   ├── restart.sh / restart.bat    # 一键重启
-│   ├── service.sh / service.bat    # 统一服务管理
-│   ├── daemon.sh                   # 自拉起守护进程
-│   ├── health-check.sh             # 健康检查
+├── scripts/                        # 部署与运维脚本
+│   ├── raw_start.bat / .ps1        # Windows裸机一键部署（小白用）
+│   ├── init-deploy.bat / .sh       # Docker一键部署
+│   ├── deploy.sh                   # 高级部署（含回滚）
 │   ├── backup.sh                   # 数据备份
-│   ├── monitor.sh                  # 进程监控
-│   ├── blue-green-deploy.sh        # 蓝绿部署
-│   └── deploy.sh                   # 部署脚本
+│   └── health-check.sh             # 健康检查
 │
-├── monitoring/                     # 监控配置（组件级）
-│   ├── prometheus/                 # Prometheus 指标采集
-│   │   ├── prometheus.yml          # 采集配置
-│   │   └── alert_rules.yml         # 告警规则
-│   ├── grafana/                    # Grafana 可视化
-│   │   ├── grafana.ini             # Grafana 配置
-│   │   └── provisioning/           # 自动配置
-│   │       ├── dashboards/         # 仪表盘 JSON
-│   │       └── datasources/        # 数据源配置
-│   ├── loki/                       # Loki 日志聚合
-│   ├── promtail/                   # Promtail 日志采集
-│   ├── alertmanager/               # Alertmanager 告警
-│   ├── blackbox/                   # Blackbox 探测
-│   ├── docker-compose.monitoring.yml  # 监控 Docker Compose
-│   ├── docker-compose.loki.yml     # 日志系统 Docker Compose
-│   └── monitor.sh / monitor.bat    # 监控启停脚本
-│
-├── monitoring-system/              # 独立监控系统（可复用）
-│   ├── setup.sh / setup.bat        # 完整安装脚本
-│   ├── quick-start.sh / quick-start.bat  # 快速启动
-│   └── README.md                   # 使用文档
-│
+├── monitor/                        # 监控系统
+│   ├── docker-compose.monitoring.yml
+│   ├── monitor.sh / monitor.bat
+│   ├── prometheus/
+│   └── grafana/
 ├── docs/                           # 项目文档
 │   ├── ARCHITECTURE.md             # 架构设计
 │   ├── TECH-STACK.md               # 技术栈说明
@@ -276,9 +253,7 @@ jmeter -n -t test/jmeter/实验室管理系统并发测试.jmx
 cd monitoring
 ./monitor.sh start
 
-# 或使用独立监控系统（可复用到其他项目）
-cd monitoring-system
-./quick-start.sh
+# 或在 .env 中设 MONITOR_ENABLED=true，运行部署脚本自动部署
 ```
 
 ---
@@ -335,7 +310,7 @@ bash deploy-docker.sh
 | [可靠性设计](docs/RELIABILITY.md) | 高可用设计 |
 | [CI/CD文档](docs/CI-CD.md) | 流水线配置 |
 | [快速参考](docs/QUICK-REFERENCE.md) | 常用命令速查 |
-| [监控系统](monitoring-system/README.md) | 独立监控系统 |
+| [小白指南](docs/小白指南.md) | 零基础使用教程 |
 
 ---
 
