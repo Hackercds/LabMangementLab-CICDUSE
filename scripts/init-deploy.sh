@@ -32,10 +32,10 @@ load_config() {
         s=="db"&&/app_password:/    {printf "export MYSQL_PASSWORD=%s\n",$3}
         s=="sp"&&/profiles_active:/ {printf "export SPRING_PROFILES_ACTIVE=%s\n",$3}
         s=="co"&&/allowed_origins:/ {printf "export CORS_ALLOWED_ORIGINS=%s\n",$3}
-        s=="jv"&&/opts:/            {gsub(/"/,"");printf "export JAVA_OPTS=%s %s %s %s %s\n",$3,$4,$5,$6,$7}
         s=="jt"&&/secret:/          {printf "export JWT_SECRET=%s\n",$3}
         s=="jt"&&/expiration:/      {printf "export JWT_EXPIRATION=%s\n",$3}
     ' "$cfg")
+    export JAVA_OPTS=$(sed -n 's/.*opts: *"\(.*\)".*/\1/p' "$cfg")
 
     log_info "HOST=${HOST_IP}  BACKEND=${BACKEND_PORT}  FRONTEND=${FRONTEND_PORT}"
 }

@@ -24,7 +24,7 @@ pipeline {
             steps {
                 sh '''
                     eval $(awk -F"[ :\\"]+" \'
-                        /^app:/{s="app"} /^database:/{s="db"} /^redis:/{s="re"} /^spring:/{s="sp"} /^cors:/{s="co"} /^java:/{s="jv"} /^jwt:/{s="jt"}
+                        /^app:/{s="app"} /^database:/{s="db"} /^spring:/{s="sp"} /^cors:/{s="co"} /^jwt:/{s="jt"}
                         s=="app"&&/host:/{printf "export HOST_IP=%s\\n",$3}
                         s=="app"&&/backend_port:/{printf "export BACKEND_PORT=%s\\n",$3}
                         s=="app"&&/frontend_port:/{printf "export FRONTEND_PORT=%s\\n",$3}
@@ -34,10 +34,10 @@ pipeline {
                         s=="db"&&/app_password:/{printf "export MYSQL_PASSWORD=%s\\n",$3}
                         s=="sp"&&/profiles_active:/{printf "export SPRING_PROFILES_ACTIVE=%s\\n",$3}
                         s=="co"&&/allowed_origins:/{printf "export CORS_ALLOWED_ORIGINS=%s\\n",$3}
-                        s=="jv"&&/opts:/{gsub(/"/,"");printf "export JAVA_OPTS=%s %s %s %s %s\\n",$3,$4,$5,$6,$7}
                         s=="jt"&&/secret:/{printf "export JWT_SECRET=%s\\n",$3}
                         s=="jt"&&/expiration:/{printf "export JWT_EXPIRATION=%s\\n",$3}
                     \' config/config.yaml)
+                    export JAVA_OPTS=$(sed -n \"s/.*opts: *\\\"\\(.*\\)\\\".*/\\\\1/p\" config/config.yaml)
 
                     HOST="${DEPLOY_HOST:-${HOST_IP}}"
                     echo "目标: ${HOST}  后端: ${BACKEND_PORT}  前端: ${FRONTEND_PORT}"
