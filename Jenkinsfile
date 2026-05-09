@@ -97,7 +97,7 @@ pipeline {
             steps {
                 sh '''
                     eval $(awk -F"[ :\\"]+" \'
-                        /^app:/{s="app"} s=="app"&&/host:/{printf "export H=%s\\n",$3}
+                        /^app:/{s="app"} /^database:/{s="db"} /^redis:/{s="re"} s=="app"&&/host:/{printf "export H=%s\\n",$3}
                         s=="app"&&/backend_port:/{printf "export B=%s\\n",$3}
                         s=="app"&&/frontend_port:/{printf "export F=%s\\n",$3}
                     \' config/config.yaml)
@@ -120,7 +120,8 @@ pipeline {
     post {
         success {
             sh '''
-                eval $(awk -F"[ :\\"]+" "/^app:/{s=\"app\"} s==\"app\"&&/host:/{printf \"H=%s\\n\",\\$3} s==\"app\"&&/frontend_port:/{printf \"P=%s\\n\",\\$3}" config/config.yaml)
+                H=$(awk -F"[ :\\"]+" "/^app:/{s=\"app\"} /^database:/{s=\"db\"} /^redis:/{s=\"re\"} s==\"app\"&&/host:/{print \\$3}" config/config.yaml)
+                P=$(awk -F"[ :\\"]+" "s==\"app\"&&/frontend_port:/{print \\$3}" config/config.yaml)
                 [ -n "${DEPLOY_HOST}" ] && H="${DEPLOY_HOST}"
                 echo "部署完成: http://${H}:${P}"
             '''
