@@ -52,7 +52,7 @@ public class ConsumableServiceTest {
         ConsumableService.UseRequest request = new ConsumableService.UseRequest();
         request.setQuantity(new BigDecimal("20"));
 
-        when(consumableMapper.selectById(id)).thenReturn(consumable);
+        when(consumableMapper.selectByIdForUpdate(id)).thenReturn(consumable);
 
         // When
         boolean needWarning = consumableService.out(id, request, 1L);
@@ -83,7 +83,7 @@ public class ConsumableServiceTest {
         ConsumableService.UseRequest request = new ConsumableService.UseRequest();
         request.setQuantity(new BigDecimal("10"));
 
-        when(consumableMapper.selectById(id)).thenReturn(consumable);
+        when(consumableMapper.selectByIdForUpdate(id)).thenReturn(consumable);
 
         // When
         boolean needWarning = consumableService.out(id, request, 1L);
@@ -113,7 +113,7 @@ public class ConsumableServiceTest {
         ConsumableService.UseRequest request = new ConsumableService.UseRequest();
         request.setQuantity(new BigDecimal("10"));
 
-        when(consumableMapper.selectById(id)).thenReturn(consumable);
+        when(consumableMapper.selectByIdForUpdate(id)).thenReturn(consumable);
 
         // When & Then
         assertThrows(BusinessException.class, () -> {
@@ -142,7 +142,7 @@ public class ConsumableServiceTest {
         ConsumableService.UseRequest request = new ConsumableService.UseRequest();
         request.setQuantity(new BigDecimal("0"));
 
-        when(consumableMapper.selectById(id)).thenReturn(consumable);
+        when(consumableMapper.selectByIdForUpdate(id)).thenReturn(consumable);
 
         // When
         boolean needWarning = consumableService.out(id, request, 1L);
