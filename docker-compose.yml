@@ -1,5 +1,6 @@
 version: '3.8'
-# 所有变量来自 .env，遵循 MICRO_SERVICE_SPEC.md "唯一配置文件" 原则
+# 配置来源: config/config.yaml
+# 使用方式: 先 source <(scripts/load_config.sh) 再 docker-compose up
 
 services:
   mysql:

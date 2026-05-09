@@ -1,20 +1,14 @@
 #!/bin/bash
-
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-log_info() { echo -e "${GREEN}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"; }
-log_step() { echo -e "${CYAN}[STEP]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"; }
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error(){ echo -e "${RED}[ERROR]${NC} $1"; }
+log_step() { echo -e "${CYAN}[STEP]${NC} $1"; }
 
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -22,208 +16,110 @@ echo "║          实验室管理系统 - Docker一键部署                   
 echo "╚════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-load_env() {
-    log_step "加载配置..."
-    if [ -f "${PROJECT_ROOT}/.env" ]; then
-        set -a
-        source "${PROJECT_ROOT}/.env"
-        set +a
-        log_info "配置加载完成 HOST_IP=${HOST_IP} BACKEND_PORT=${BACKEND_PORT}"
-    else
-        log_error ".env 文件不存在！"
-        exit 1
-    fi
+# 从 config/config.yaml 加载配置
+load_config() {
+    local cfg="${PROJECT_ROOT}/config/config.yaml"
+    [ ! -f "$cfg" ] && { log_error "config/config.yaml 不存在！"; exit 1; }
+
+    eval $(awk -F'[ :"]+' '
+        /^app:/{s="app"} /^database:/{s="db"} /^spring:/{s="sp"} /^cors:/{s="co"} /^java:/{s="jv"} /^jwt:/{s="jt"}
+        s=="app"&&/host:/           {printf "export HOST_IP=%s\n",$3}
+        s=="app"&&/backend_port:/   {printf "export BACKEND_PORT=%s\n",$3}
+        s=="app"&&/frontend_port:/  {printf "export FRONTEND_PORT=%s\n",$3}
+        s=="db"&&/name:/            {printf "export MYSQL_DATABASE=%s\n",$3}
+        s=="db"&&/user:/            {printf "export MYSQL_USER=%s\n",$3}
+        s=="db"&&/root_password:/   {printf "export MYSQL_ROOT_PASSWORD=%s\n",$3}
+        s=="db"&&/app_password:/    {printf "export MYSQL_PASSWORD=%s\n",$3}
+        s=="sp"&&/profiles_active:/ {printf "export SPRING_PROFILES_ACTIVE=%s\n",$3}
+        s=="co"&&/allowed_origins:/ {printf "export CORS_ALLOWED_ORIGINS=%s\n",$3}
+        s=="jv"&&/opts:/            {gsub(/"/,"");printf "export JAVA_OPTS=%s %s %s %s %s\n",$3,$4,$5,$6,$7}
+        s=="jt"&&/secret:/          {printf "export JWT_SECRET=%s\n",$3}
+        s=="jt"&&/expiration:/      {printf "export JWT_EXPIRATION=%s\n",$3}
+    ' "$cfg")
+
+    log_info "HOST=${HOST_IP}  BACKEND=${BACKEND_PORT}  FRONTEND=${FRONTEND_PORT}"
 }
 
 check_docker() {
-    log_step "检查Docker环境..."
-    if ! command -v docker &> /dev/null; then
-        log_error "Docker未安装"
-        exit 1
-    fi
-    if ! docker info &> /dev/null; then
-        log_error "Docker未运行"
-        exit 1
-    fi
-    log_info "Docker环境检查通过"
+    log_step "检查Docker..."
+    command -v docker &>/dev/null || { log_error "Docker未安装"; exit 1; }
+    docker info &>/dev/null || { log_error "Docker未运行"; exit 1; }
+    log_info "Docker OK"
 }
 
-stop_old_containers() {
+stop_old() {
     log_step "停止旧容器..."
     docker stop lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
     docker rm lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
-    log_info "旧容器已停止"
 }
 
 build_images() {
-    log_step "构建Docker镜像..."
-    docker build -t lab-backend ${PROJECT_ROOT}/backend
-    docker build -t lab-frontend ${PROJECT_ROOT}/frontend
-    log_info "Docker镜像构建完成"
+    log_step "构建镜像..."
+    docker build -t lab-backend "${PROJECT_ROOT}/backend"
+    docker build -t lab-frontend "${PROJECT_ROOT}/frontend"
 }
 
 start_services() {
     log_step "启动服务..."
-
     docker network create lab-network 2>/dev/null || true
     docker volume create lab-mysql-data 2>/dev/null || true
     docker volume create lab-redis-data 2>/dev/null || true
 
-    docker run -d \
-        --name lab-mysql \
-        --restart always \
-        --network lab-network \
-        --network-alias mysql \
-        -p ${MYSQL_PORT:-3306}:3306 \
-        -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
-        -e MYSQL_DATABASE=${MYSQL_DATABASE} \
-        -e MYSQL_USER=${MYSQL_USER} \
-        -e MYSQL_PASSWORD=${MYSQL_PASSWORD} \
-        -e TZ=Asia/Shanghai \
-        -v lab-mysql-data:/var/lib/mysql \
-        mysql:8.0 \
-        --character-set-server=utf8mb4 \
-        --collation-server=utf8mb4_unicode_ci \
-        --default-authentication-plugin=mysql_native_password
+    docker run -d --name lab-mysql --restart always --network lab-network --network-alias mysql \
+        -p 3306:3306 \
+        -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+        -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
+        -e MYSQL_USER="${MYSQL_USER}" -e MYSQL_PASSWORD="${MYSQL_PASSWORD}" \
+        -e TZ=Asia/Shanghai -v lab-mysql-data:/var/lib/mysql \
+        mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
 
-    log_info "等待MySQL启动..."
     for i in $(seq 1 30); do
-        if docker exec lab-mysql mysqladmin ping -h localhost 2>/dev/null; then
-            log_info "MySQL已就绪"
-            break
-        fi
+        docker exec lab-mysql mysqladmin ping -h localhost 2>/dev/null && { log_info "MySQL 就绪"; break; }
         sleep 5
     done
 
-    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} -f ${MYSQL_DATABASE} < ${PROJECT_ROOT}/backend/src/main/resources/db/schema.sql || true
+    docker exec -i lab-mysql mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -f ${MYSQL_DATABASE} \
+        < "${PROJECT_ROOT}/backend/src/main/resources/db/schema.sql" || true
 
-    docker run -d \
-        --name lab-redis \
-        --restart always \
-        --network lab-network \
-        --network-alias redis \
-        -p ${REDIS_PORT:-6379}:6379 \
-        -v lab-redis-data:/data \
-        redis:7-alpine \
-        redis-server --appendonly yes
-
+    docker run -d --name lab-redis --restart always --network lab-network --network-alias redis \
+        -p 6379:6379 -v lab-redis-data:/data redis:7-alpine redis-server --appendonly yes
     sleep 3
 
-    docker run -d \
-        --name lab-backend \
-        --restart always \
-        --network lab-network \
-        --network-alias backend \
+    docker run -d --name lab-backend --restart always --network lab-network --network-alias backend \
         -p ${BACKEND_PORT}:${BACKEND_PORT} \
-        -e SPRING_PROFILES_ACTIVE=prod \
-        -e SERVER_PORT=${BACKEND_PORT} \
-        -e DB_HOST=mysql \
-        -e DB_PORT=3306 \
-        -e DB_NAME=${MYSQL_DATABASE} \
-        -e DB_USERNAME=${MYSQL_USER} \
-        -e DB_PASSWORD=${MYSQL_PASSWORD} \
-        -e REDIS_HOST=redis \
-        -e REDIS_PORT=6379 \
-        -e REDIS_PASSWORD= \
-        -e REDIS_DATABASE=0 \
-        -e JWT_SECRET=${JWT_SECRET} \
-        -e JWT_EXPIRATION=${JWT_EXPIRATION} \
-        -e CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}" \
-        -e JAVA_OPTS="${JAVA_OPTS}" \
+        -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}" -e SERVER_PORT="${BACKEND_PORT}" \
+        -e DB_HOST=mysql -e DB_PORT=3306 -e DB_NAME="${MYSQL_DATABASE}" \
+        -e DB_USERNAME="${MYSQL_USER}" -e DB_PASSWORD="${MYSQL_PASSWORD}" \
+        -e REDIS_HOST=redis -e REDIS_PORT=6379 -e REDIS_PASSWORD="" -e REDIS_DATABASE=0 \
+        -e JWT_SECRET="${JWT_SECRET}" -e JWT_EXPIRATION="${JWT_EXPIRATION}" \
+        -e CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}" -e JAVA_OPTS="${JAVA_OPTS}" \
         lab-backend
 
-    docker run -d \
-        --name lab-frontend \
-        --restart always \
-        --network lab-network \
-        -p ${FRONTEND_PORT}:80 \
-        lab-frontend
-
-    log_info "服务启动中..."
+    docker run -d --name lab-frontend --restart always --network lab-network \
+        -p ${FRONTEND_PORT}:80 lab-frontend
 }
 
 wait_for_services() {
     log_step "等待服务就绪..."
     sleep 30
-
-    local max_wait=120
-    local wait_time=0
-    while [ $wait_time -lt $max_wait ]; do
-        if curl -sf http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health > /dev/null 2>&1; then
-            log_info "后端服务已就绪"
-            break
-        fi
+    for i in $(seq 1 30); do
+        curl -sf --connect-timeout 3 "http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health" >/dev/null 2>&1 && { log_info "后端 OK"; break; }
         sleep 5
-        wait_time=$((wait_time + 5))
-        log_info "等待后端服务... (${wait_time}s/${max_wait}s)"
     done
-
-    if [ $wait_time -ge $max_wait ]; then
-        log_warn "后端服务启动超时，请检查日志"
-    fi
 }
 
 show_status() {
-    log_step "服务状态:"
     docker ps --filter "name=lab-"
-
     echo ""
-    log_info "=========================================="
-    log_info "部署完成！"
-    log_info "=========================================="
-    echo ""
-    echo "访问地址:"
-    echo "  前端页面: http://${HOST_IP}:${FRONTEND_PORT}"
-    echo "  后端API:  http://${HOST_IP}:${BACKEND_PORT}/api"
-    echo "  健康检查: http://${HOST_IP}:${BACKEND_PORT}/api/actuator/health"
-    if [ "${MONITOR_ENABLED:-false}" = "true" ]; then
-        echo "  Grafana:   http://${HOST_IP}:3001 (admin/admin123)"
-        echo "  Prometheus: http://${HOST_IP}:9090"
-    fi
-    echo ""
-    echo "默认账号:"
-    echo "  管理员: admin / admin123"
-    echo ""
-    echo "查看日志:"
-    echo "  docker logs -f lab-backend"
-    echo "  docker logs -f lab-frontend"
-    echo ""
+    echo "  前端: http://${HOST_IP}:${FRONTEND_PORT}"
+    echo "  后端: http://${HOST_IP}:${BACKEND_PORT}/api"
+    echo "  账号: admin / admin123"
 }
 
-start_monitoring() {
-    if [ "${MONITOR_ENABLED:-false}" != "true" ]; then
-        log_info "监控未启用（设置 MONITOR_ENABLED=true 可自动部署监控）"
-        return
-    fi
-
-    log_step "部署监控服务..."
-    cd "${PROJECT_ROOT}/monitor"
-
-    # 停止旧监控容器
-    docker stop lab-prometheus lab-grafana 2>/dev/null || true
-    docker rm lab-prometheus lab-grafana 2>/dev/null || true
-
-    docker-compose -f docker-compose.monitoring.yml up -d
-    cd "${PROJECT_ROOT}"
-
-    # 停止旧监控容器
-    docker stop lab-prometheus lab-grafana lab-alertmanager lab-loki lab-promtail lab-node-exporter lab-cadvisor lab-mysql-exporter lab-redis-exporter lab-blackbox-exporter 2>/dev/null || true
-    docker rm lab-prometheus lab-grafana lab-alertmanager lab-loki lab-promtail lab-node-exporter lab-cadvisor lab-mysql-exporter lab-redis-exporter lab-blackbox-exporter 2>/dev/null || true
-
-    docker-compose -f docker-compose.monitoring.yml up -d
-    cd "${SCRIPT_DIR}"
-    log_info "监控服务已启动"
-}
-
-main() {
-    load_env
-    check_docker
-    stop_old_containers
-    build_images
-    start_services
-    wait_for_services
-    start_monitoring
-    show_status
-}
-
-main "$@"
+load_config
+check_docker
+stop_old
+build_images
+start_services
+wait_for_services
+show_status

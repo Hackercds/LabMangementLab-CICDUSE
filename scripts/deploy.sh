@@ -102,8 +102,8 @@ backup_current() {
     mkdir -p "${backup_path}"
     
     # 备份配置文件
-    if [ -f "${PROJECT_ROOT}/.env" ]; then
-        cp "${PROJECT_ROOT}/.env" "${backup_path}/"
+    if [ -f "${PROJECT_ROOT}/config/config.yaml" ]; then
+        cp "${PROJECT_ROOT}/config/config.yaml" "${backup_path}/"
     fi
     
     # 备份Docker镜像
