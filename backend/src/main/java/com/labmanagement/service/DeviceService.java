@@ -1,6 +1,5 @@
 package com.labmanagement.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -28,7 +27,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DeviceService {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final DeviceMapper deviceMapper;
     private final DeviceBorrowHistoryMapper deviceBorrowHistoryMapper;
     private final OperationLogService operationLogService;
@@ -128,7 +126,7 @@ public class DeviceService {
             throw new BusinessException(ResultCode.DEVICE_NOT_AVAILABLE);
         }
 
-        String beforeSnapshot = MAPPER.writeValueAsString(device);
+        String beforeSnapshot = JacksonUtil.toJson(device);
 
         // 更新设备状态为借用中
         device.setStatus("BORROWED");
@@ -144,7 +142,7 @@ public class DeviceService {
         history.setOperationTime(LocalDateTime.now());
         deviceBorrowHistoryMapper.insert(history);
 
-        String afterSnapshot = MAPPER.writeValueAsString(device);
+        String afterSnapshot = JacksonUtil.toJson(device);
 
         operationLogService.logWithSnapshot(borrowerId, "BORROW", "DEVICE",
                 "借用设备: " + id, null, beforeSnapshot, afterSnapshot);
@@ -163,7 +161,7 @@ public class DeviceService {
             throw new BusinessException(400, "设备当前不在借用中");
         }
 
-        String beforeSnapshot = MAPPER.writeValueAsString(device);
+        String beforeSnapshot = JacksonUtil.toJson(device);
 
         // 更新设备状态为正常
         device.setStatus("NORMAL");
@@ -183,7 +181,7 @@ public class DeviceService {
             deviceBorrowHistoryMapper.updateById(history);
         }
 
-        String afterSnapshot = MAPPER.writeValueAsString(device);
+        String afterSnapshot = JacksonUtil.toJson(device);
 
         operationLogService.logWithSnapshot(operatorId, "RETURN", "DEVICE",
                 "归还设备: " + id, null, beforeSnapshot, afterSnapshot);

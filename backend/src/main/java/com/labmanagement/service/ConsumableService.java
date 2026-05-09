@@ -1,6 +1,5 @@
 package com.labmanagement.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -29,7 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ConsumableService {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final ConsumableMapper consumableMapper;
     private final ConsumableLogMapper consumableLogMapper;
     private final OperationLogService operationLogService;
@@ -143,7 +141,7 @@ public class ConsumableService {
             throw new BusinessException(404, "耗材不存在");
         }
 
-        String beforeSnapshot = MAPPER.writeValueAsString(consumable);
+        String beforeSnapshot = JacksonUtil.toJson(consumable);
 
         // 更新库存
         BigDecimal newStock = consumable.getCurrentStock().add(request.getQuantity());
@@ -161,7 +159,7 @@ public class ConsumableService {
         log.setPurpose(request.getPurpose());
         consumableLogMapper.insert(log);
 
-        String afterSnapshot = MAPPER.writeValueAsString(consumable);
+        String afterSnapshot = JacksonUtil.toJson(consumable);
 
         operationLogService.logWithSnapshot(operatorId, "IN", "CONSUMABLE",
                 "耗材入库: " + id + ", 数量: " + request.getQuantity(), null,
@@ -183,7 +181,7 @@ public class ConsumableService {
             throw new BusinessException(ResultCode.INSUFFICIENT_STOCK);
         }
 
-        String beforeSnapshot = MAPPER.writeValueAsString(consumable);
+        String beforeSnapshot = JacksonUtil.toJson(consumable);
 
         // 更新库存
         BigDecimal newStock = consumable.getCurrentStock().subtract(request.getQuantity());
@@ -201,7 +199,7 @@ public class ConsumableService {
         log.setPurpose(request.getPurpose());
         consumableLogMapper.insert(log);
 
-        String afterSnapshot = MAPPER.writeValueAsString(consumable);
+        String afterSnapshot = JacksonUtil.toJson(consumable);
 
         operationLogService.logWithSnapshot(operatorId, "OUT", "CONSUMABLE",
                 "耗材领用: " + id + ", 数量: " + request.getQuantity(), null,
