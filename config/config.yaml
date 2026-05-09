@@ -4,8 +4,8 @@
 
 app:
   host: "maco.hackercd.cn"
-  backend_port: 10081
-  frontend_port: 10080
+  backend_port: 10082
+  frontend_port: 10081
 
 database:
   host: "mysql"
