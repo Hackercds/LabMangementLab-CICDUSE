@@ -79,3 +79,4 @@ backups/
 downloads/
 *.exe
 node_modules/
+.claude
