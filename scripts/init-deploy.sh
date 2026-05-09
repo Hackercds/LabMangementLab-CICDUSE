@@ -86,8 +86,8 @@ start_services() {
     sleep 3
 
     docker run -d --name lab-backend --restart always --network lab-network --network-alias backend \
-        -p ${BACKEND_PORT}:${BACKEND_PORT} \
-        -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}" -e SERVER_PORT="${BACKEND_PORT}" \
+        -p ${BACKEND_PORT}:8081 \
+        -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}" -e SERVER_PORT="8081" \
         -e DB_HOST=mysql -e DB_PORT=3306 -e DB_NAME="${MYSQL_DATABASE}" \
         -e DB_USERNAME="${MYSQL_USER}" -e DB_PASSWORD="${MYSQL_PASSWORD}" \
         -e REDIS_HOST=redis -e REDIS_PORT=6379 -e REDIS_PASSWORD="" -e REDIS_DATABASE=0 \
