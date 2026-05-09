@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DEPLOY_HOST', defaultValue: 'maco.hackercd.cn', description: '部署目标机器IP（必填）')
-        string(name: 'DOCKER_HOST_URI', defaultValue: 'tcp://192.168.3.188:2375', description: '远程Docker TCP地址，如 tcp://192.168.3.188:2375')
-        string(name: 'BACKEND_PORT', defaultValue: '10081', description: '后端服务端口')
-        string(name: 'FRONTEND_PORT', defaultValue: '10080', description: '前端服务端口')
-        choice(name: 'SPRING_PROFILES_ACTIVE', choices: ['prod', 'test'], description: 'Spring运行环境')
-        booleanParam(name: 'SKIP_DB_INIT', defaultValue: false, description: '跳过数据库初始化（已有数据时勾选）')
-        booleanParam(name: 'CLEAN_VOLUMES', defaultValue: false, description: '清理旧数据卷（谨慎！会清空数据）')
+        string(name: 'DEPLOY_HOST', defaultValue: '192.168.3.188', description: '部署目标机器IP（必填）')
+        string(name: 'DOCKER_HOST_URI', defaultValue: '', description: '远程Docker TCP（可选）')
+        string(name: 'BACKEND_PORT', defaultValue: '10081', description: '后端端口')
+        string(name: 'FRONTEND_PORT', defaultValue: '10080', description: '前端端口')
+        choice(name: 'SPRING_PROFILES_ACTIVE', choices: ['prod', 'test'], description: 'Spring环境')
+        booleanParam(name: 'SKIP_DB_INIT', defaultValue: false, description: '跳过数据库初始化')
+        booleanParam(name: 'CLEAN_VOLUMES', defaultValue: false, description: '清理旧数据卷')
     }
 
     environment {
@@ -18,10 +18,10 @@ pipeline {
         MYSQL_USER = 'labuser'
         MYSQL_VOLUME = "lab-mysql-data-${BUILD_NUMBER}"
         REDIS_VOLUME = "lab-redis-data-${BUILD_NUMBER}"
-        // 敏感信息从Jenkins凭据获取，不硬编码
-        MYSQL_ROOT_PASSWORD = credentials('lab-mysql-root-password')
-        MYSQL_PASSWORD = credentials('lab-mysql-password')
-        JWT_SECRET = credentials('lab-jwt-secret')
+        // 默认值开箱即用，生产环境请改用 Jenkins 凭据
+        MYSQL_ROOT_PASSWORD = 'root123456'
+        MYSQL_PASSWORD = 'lab123456'
+        JWT_SECRET = 'lab-management-jwt-secret-key-2026-production'
     }
 
     stages {
@@ -37,21 +37,21 @@ pipeline {
             steps {
                 sh '''
                     if [ -z "${DEPLOY_HOST}" ]; then
-                        echo "DEPLOY_HOST 未设置，请在构建参数中填写部署目标IP"
+                        echo "ERROR: DEPLOY_HOST 未设置，请在构建参数中填写部署目标IP"
                         exit 1
                     fi
                     if [ -n "${DOCKER_HOST_URI}" ]; then
                         export DOCKER_HOST="${DOCKER_HOST_URI}"
                     fi
-                    docker info > /dev/null 2>&1 || { echo "无法连接 Docker"; exit 1; }
-                    echo "Docker 连接正常"
+                    docker info > /dev/null 2>&1 || { echo "ERROR: 无法连接 Docker"; exit 1; }
+                    echo "Docker 连接正常, 目标主机: ${DEPLOY_HOST}"
                 '''
             }
         }
 
         stage('Docker镜像构建') {
             steps {
-                echo '构建Docker镜像（编译在Dockerfile内完成）...'
+                echo '构建Docker镜像...'
                 sh '''
                     if [ -n "${DOCKER_HOST_URI}" ]; then
                         export DOCKER_HOST="${DOCKER_HOST_URI}"
@@ -70,13 +70,11 @@ pipeline {
                         export DOCKER_HOST="${DOCKER_HOST_URI}"
                     fi
 
-                    HOST="${DEPLOY_HOST}"
-
                     # 停止旧容器
                     docker rm -f lab-frontend lab-backend lab-redis lab-mysql 2>/dev/null || true
                     sleep 3
 
-                    # 清理旧数据卷（仅在明确要求时）
+                    # 清理旧数据卷
                     if [ "${CLEAN_VOLUMES}" = "true" ]; then
                         echo "清理旧版本数据卷..."
                         for vol in $(docker volume ls -q | grep lab-mysql-data); do
@@ -88,11 +86,9 @@ pipeline {
                     fi
 
                     docker network create ${NETWORK} 2>/dev/null || true
-
                     docker volume create ${MYSQL_VOLUME}
                     docker volume create ${REDIS_VOLUME}
 
-                    # 启动 MySQL
                     echo "启动MySQL..."
                     docker run -d \
                         --name lab-mysql \
@@ -100,10 +96,10 @@ pipeline {
                         --network ${NETWORK} \
                         --network-alias mysql \
                         -p 3306:3306 \
-                        -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
-                        -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
-                        -e MYSQL_USER="${MYSQL_USER}" \
-                        -e MYSQL_PASSWORD="${MYSQL_PASSWORD}" \
+                        -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
+                        -e MYSQL_DATABASE=${MYSQL_DATABASE} \
+                        -e MYSQL_USER=${MYSQL_USER} \
+                        -e MYSQL_PASSWORD=${MYSQL_PASSWORD} \
                         -e TZ=Asia/Shanghai \
                         -v ${MYSQL_VOLUME}:/var/lib/mysql \
                         mysql:8.0 \
@@ -111,10 +107,9 @@ pipeline {
                         --collation-server=utf8mb4_unicode_ci \
                         --default-authentication-plugin=mysql_native_password
 
-                    # 等待 MySQL 就绪
                     echo "等待MySQL就绪..."
                     for i in $(seq 1 60); do
-                        if docker exec lab-mysql mysqladmin ping -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" 2>/dev/null; then
+                        if docker exec lab-mysql mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} 2>/dev/null; then
                             echo "MySQL已就绪"
                             break
                         fi
@@ -122,16 +117,15 @@ pipeline {
                         sleep 2
                     done
 
-                    # 初始化数据库
+                    # 初始化数据库（schema.sql 已包含 system_config）
                     if [ "${SKIP_DB_INIT}" != "true" ]; then
                         echo "初始化数据库..."
-                        docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" --default-character-set=utf8mb4 ${MYSQL_DATABASE} < ${WORKSPACE}/backend/src/main/resources/db/schema.sql
+                        cat ${WORKSPACE}/backend/src/main/resources/db/schema.sql | docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --default-character-set=utf8mb4 ${MYSQL_DATABASE}
                         echo "数据库初始化完成"
                     else
                         echo "跳过数据库初始化（SKIP_DB_INIT=true）"
                     fi
 
-                    # 启动 Redis
                     echo "启动Redis..."
                     docker run -d \
                         --name lab-redis \
@@ -145,7 +139,6 @@ pipeline {
 
                     sleep 3
 
-                    # 启动后端
                     echo "启动后端服务..."
                     docker run -d \
                         --name lab-backend \
@@ -153,24 +146,23 @@ pipeline {
                         --network ${NETWORK} \
                         --network-alias backend \
                         -p ${BACKEND_PORT}:${BACKEND_PORT} \
-                        -e SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE}" \
-                        -e SERVER_PORT="${BACKEND_PORT}" \
+                        -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
+                        -e SERVER_PORT=${BACKEND_PORT} \
                         -e DB_HOST=mysql \
                         -e DB_PORT=3306 \
-                        -e DB_NAME="${MYSQL_DATABASE}" \
-                        -e DB_USERNAME="${MYSQL_USER}" \
-                        -e DB_PASSWORD="${MYSQL_PASSWORD}" \
+                        -e DB_NAME=${MYSQL_DATABASE} \
+                        -e DB_USERNAME=${MYSQL_USER} \
+                        -e DB_PASSWORD=${MYSQL_PASSWORD} \
                         -e REDIS_HOST=redis \
                         -e REDIS_PORT=6379 \
                         -e REDIS_PASSWORD= \
                         -e REDIS_DATABASE=0 \
-                        -e JWT_SECRET="${JWT_SECRET}" \
+                        -e JWT_SECRET=${JWT_SECRET} \
                         -e JWT_EXPIRATION=86400000 \
-                        -e CORS_ALLOWED_ORIGINS="http://${DEPLOY_HOST}" \
+                        -e CORS_ALLOWED_ORIGINS="*" \
                         -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC" \
                         lab-backend
 
-                    # 启动前端
                     echo "启动前端服务..."
                     docker run -d \
                         --name lab-frontend \
@@ -192,10 +184,10 @@ pipeline {
 
                     HOST="${DEPLOY_HOST}"
 
-                    echo "等待后端启动..."
+                    echo "等待Spring Boot启动..."
                     sleep 30
 
-                    echo "检查后端端口监听..."
+                    echo "检查后端端口..."
                     port_open=false
                     for i in $(seq 1 30); do
                         if curl -s --connect-timeout 2 "http://${HOST}:${BACKEND_PORT}" > /dev/null 2>&1; then
@@ -203,12 +195,12 @@ pipeline {
                             port_open=true
                             break
                         fi
-                        echo "等待后端端口监听... ($i/30)"
+                        echo "等待后端... ($i/30)"
                         sleep 5
                     done
 
                     if [ "$port_open" != "true" ]; then
-                        echo "后端端口 ${BACKEND_PORT} 未启动，打印日志："
+                        echo "后端未启动，打印日志:"
                         docker logs lab-backend --tail 100 2>/dev/null || true
                         exit 1
                     fi
@@ -220,11 +212,11 @@ pipeline {
                             echo "后端健康检查通过 (HTTP $http_code)"
                             break
                         fi
-                        echo "等待后端健康... ($i/30) HTTP状态: $http_code"
+                        echo "等待健康检查... ($i/30) HTTP: $http_code"
                         sleep 5
                     done
 
-                    echo "检查前端端口监听..."
+                    echo "检查前端..."
                     sleep 3
                     for i in $(seq 1 10); do
                         if curl -s --connect-timeout 2 "http://${HOST}:${FRONTEND_PORT}" > /dev/null 2>&1; then
@@ -246,11 +238,10 @@ pipeline {
             ========================================
             部署完成
             ========================================
-            访问地址:
-              前端页面: http://${params.DEPLOY_HOST}:${params.FRONTEND_PORT}
-              后端API:  http://${params.DEPLOY_HOST}:${params.BACKEND_PORT}/api
-              健康检查: http://${params.DEPLOY_HOST}:${params.BACKEND_PORT}/api/actuator/health
-            默认账号: admin / admin123
+            前端: http://${params.DEPLOY_HOST}:${params.FRONTEND_PORT}
+            后端: http://${params.DEPLOY_HOST}:${params.BACKEND_PORT}/api
+            健康: http://${params.DEPLOY_HOST}:${params.BACKEND_PORT}/api/actuator/health
+            账号: admin / admin123
             ========================================
             """
         }
@@ -258,15 +249,11 @@ pipeline {
         failure {
             echo "Pipeline执行失败"
             sh '''
-                DOCKER_HOST_STR=""
-                if [ -n "${DOCKER_HOST_URI}" ]; then
-                    export DOCKER_HOST="${DOCKER_HOST_URI}"
-                fi
-                echo "========== 后端日志(最近50行) =========="
+                echo "=== 后端日志 ==="
                 docker logs lab-backend --tail 50 2>/dev/null || true
-                echo "========== 前端日志(最近50行) =========="
+                echo "=== 前端日志 ==="
                 docker logs lab-frontend --tail 50 2>/dev/null || true
-                echo "========== MySQL日志(最近50行) =========="
+                echo "=== MySQL日志 ==="
                 docker logs lab-mysql --tail 50 2>/dev/null || true
             '''
         }

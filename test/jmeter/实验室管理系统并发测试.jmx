@@ -16,7 +16,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="baseUrl" elementType="Argument">
             <stringProp name="Argument.name">baseUrl</stringProp>
-            <stringProp name="Argument.value">http://localhost:8080/api</stringProp>
+            <stringProp name="Argument.value">http://localhost:8081/api</stringProp>
           </elementProp>
           <elementProp name="adminUser" elementType="Argument">
             <stringProp name="Argument.name">adminUser</stringProp>
