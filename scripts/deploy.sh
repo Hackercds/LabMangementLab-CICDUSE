@@ -164,7 +164,7 @@ health_check() {
     local retry=0
     
     while [ $retry -lt $max_retries ]; do
-        if curl -sf http://localhost:8081/api/actuator/health > /dev/null 2>&1; then
+        if curl -sf http://localhost:${BACKEND_PORT:-8081}/api/actuator/health > /dev/null 2>&1; then
             log_info "健康检查通过"
             return 0
         fi

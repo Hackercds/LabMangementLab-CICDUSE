@@ -95,7 +95,7 @@ start_services() {
         sleep 5
     done
 
-    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} < ${PROJECT_ROOT}/backend/src/main/resources/db/schema.sql
+    docker exec -i lab-mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} -f ${MYSQL_DATABASE} < ${PROJECT_ROOT}/backend/src/main/resources/db/schema.sql || true
 
     docker run -d \
         --name lab-redis \

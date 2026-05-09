@@ -193,8 +193,8 @@ services:
 
 networks:
   lab-network:
-    driver: bridge
-    name: lab-monitoring
+    external: true
+    name: lab-network
 
 volumes:
   prometheus_data:

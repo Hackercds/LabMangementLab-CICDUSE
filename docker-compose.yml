@@ -1,19 +1,19 @@
 version: '3.8'
+# 所有变量来自 .env，遵循 MICRO_SERVICE_SPEC.md "唯一配置文件" 原则
 
 services:
-  # MySQL数据库
   mysql:
     image: mysql:8.0
     container_name: lab-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-lab_management}
-      MYSQL_USER: ${MYSQL_USER:-labuser}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lab123456}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
@@ -29,13 +29,12 @@ services:
     networks:
       - lab-network
 
-  # Redis缓存
   redis:
     image: redis:7-alpine
     container_name: lab-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -47,7 +46,6 @@ services:
     networks:
       - lab-network
 
-  # 后端服务
   backend:
     build:
       context: ./backend
@@ -55,30 +53,30 @@ services:
     container_name: lab-backend
     restart: always
     environment:
-      SPRING_PROFILES_ACTIVE: prod
-      SERVER_PORT: 8081
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SERVER_PORT: ${BACKEND_PORT}
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: lab_management
-      DB_USERNAME: ${MYSQL_USER:-labuser}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-lab123456}
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ""
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_DATABASE: 0
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
-      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
-      JAVA_OPTS: -Xms512m -Xmx1024m -XX:+UseG1GC
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      JAVA_OPTS: ${JAVA_OPTS}
     ports:
-      - "8081:8081"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/api/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT}/api/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -86,7 +84,6 @@ services:
     networks:
       - lab-network
 
-  # 前端服务
   frontend:
     build:
       context: ./frontend
@@ -94,7 +91,7 @@ services:
     container_name: lab-frontend
     restart: always
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT}:80"
     depends_on:
       - backend
     healthcheck:
