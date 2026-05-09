@@ -119,12 +119,7 @@ pipeline {
 
     post {
         success {
-            sh '''
-                H=$(awk -F"[ :\\"]+" "/^app:/{s=\"app\"} /^database:/{s=\"db\"} /^redis:/{s=\"re\"} s==\"app\"&&/host:/{print \\$3}" config/config.yaml)
-                P=$(awk -F"[ :\\"]+" "s==\"app\"&&/frontend_port:/{print \\$3}" config/config.yaml)
-                [ -n "${DEPLOY_HOST}" ] && H="${DEPLOY_HOST}"
-                echo "部署完成: http://${H}:${P}"
-            '''
+            echo "部署完成"
         }
         failure {
             sh 'docker logs lab-backend --tail 80 2>/dev/null || true; docker logs lab-mysql --tail 30 2>/dev/null || true'
