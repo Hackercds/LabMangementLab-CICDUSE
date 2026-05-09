@@ -1,0 +1,49 @@
+# ============================================
+# 实验室管理系统 - 唯一配置文件
+# 遵循 MICRO_SERVICE_SPEC.md 第 1.1 节 + 第 2.1 节
+# 路径: config/config.yaml (提交到Git仓库)
+#
+# 使用方式:
+#   - Jenkins:   读取此文件后通过 environment 块覆盖敏感值
+#   - Docker:    部署脚本从此文件生成 .env 供 docker-compose 使用
+#   - 裸机:      raw_start.ps1 读取此文件
+#   - Spring:    application.yml 读取环境变量（由部署工具注入）
+#
+# 优先级: CI/CD环境变量 > .env本地覆盖 > config.yaml > 代码默认值
+# ============================================
+
+app:
+  name: "实验室管理系统"
+  version: "1.1.0"
+  host: "maco.hackercd.cn"
+  backend_port: 10081
+  frontend_port: 10080
+
+database:
+  host: "mysql"
+  port: 3306
+  name: "lab_management"
+  user: "labuser"
+  # 密码通过 Jenkins environment / .env 注入，不写在此文件中
+
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  database: 0
+
+jwt:
+  # JWT密钥通过 Jenkins environment / .env 注入
+  expiration: 86400000
+
+spring:
+  profiles_active: "prod"
+
+cors:
+  allowed_origins: "*"
+
+java:
+  opts: "-Xms512m -Xmx1024m -XX:+UseG1GC"
+
+monitor:
+  enabled: true
