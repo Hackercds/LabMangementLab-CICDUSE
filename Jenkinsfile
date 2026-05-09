@@ -19,7 +19,7 @@ pipeline {
             steps {
                 sh '''
                     set -a
-                    source .env
+                    . ./.env
                     set +a
                     # 参数覆盖 .env
                     if [ -n "${DEPLOY_HOST}" ]; then
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 echo '构建Docker镜像...'
                 sh '''
-                    set -a && source .env && set +a
+                    set -a && . ./.env && set +a
                     docker build -t lab-backend ./backend
                     docker build -t lab-frontend ./frontend
                 '''
@@ -45,7 +45,7 @@ pipeline {
             steps {
                 echo '部署服务...'
                 sh '''
-                    set -a && source .env && set +a
+                    set -a && . ./.env && set +a
                     [ -n "${DEPLOY_HOST}" ] && export HOST_IP="${DEPLOY_HOST}"
 
                     NETWORK="lab-network"
@@ -136,7 +136,7 @@ pipeline {
             steps {
                 echo '检查服务健康状态...'
                 sh '''
-                    set -a && source .env && set +a
+                    set -a && . ./.env && set +a
                     [ -n "${DEPLOY_HOST}" ] && export HOST_IP="${DEPLOY_HOST}"
 
                     echo "等待后端启动..."
