@@ -42,6 +42,21 @@ public class AnnouncementController {
     }
 
     /**
+     * 获取当前用户通知（最近10条）
+     */
+    @GetMapping("/my-notifications")
+    public Result<List<Announcement>> myNotifications(@RequestAttribute Long userId) {
+        List<Announcement> list = announcementService.getMyNotifications(userId, 10);
+        return Result.success(list);
+    }
+
+    /** 获取当前用户未读通知数 */
+    @GetMapping("/unread-count")
+    public Result<Long> unreadCount(@RequestAttribute Long userId) {
+        return Result.success(announcementService.countMyNotifications(userId));
+    }
+
+    /**
      * 管理端分页查询
      */
     @GetMapping("/admin/page")

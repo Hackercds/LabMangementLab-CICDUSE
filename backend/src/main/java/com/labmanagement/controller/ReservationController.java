@@ -153,6 +153,7 @@ public class ReservationController {
                                      @RequestParam String startTime,
                                      @RequestParam String endTime,
                                      @RequestParam(required = false) String purpose,
+                                     @RequestParam(defaultValue = "false") boolean force,
                                      @RequestAttribute Long userId) {
         Reservation reservation = new Reservation();
         reservation.setLabId(labId);
@@ -160,7 +161,7 @@ public class ReservationController {
         reservation.setStartTime(java.time.LocalTime.parse(startTime));
         reservation.setEndTime(java.time.LocalTime.parse(endTime));
         reservation.setPurpose(purpose);
-        reservationService.createForUser(reservation, targetUserId, userId);
+        reservationService.createForUser(reservation, targetUserId, userId, force);
         return Result.success();
     }
 

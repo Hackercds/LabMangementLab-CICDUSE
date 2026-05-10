@@ -23,14 +23,31 @@ public class SystemConfigController {
     @GetMapping("/list")
     @PreAuthorize("hasRole('ADMIN')")
     public Result<List<Map<String, String>>> listConfigs() {
-        List<Map<String, String>> configs = List.of(
-            Map.of(
-                "key", "auto_approve_teacher",
-                "value", systemConfigService.getConfig("auto_approve_teacher"),
-                "description", "教师审批预约时是否自动审批无冲突预约"
-            )
-        );
-        return Result.success(configs);
+        return Result.success(List.of(
+            Map.of("key","auto_approve_teacher","value",systemConfigService.getConfig("auto_approve_teacher"),"description","教师自动审批"),
+            Map.of("key","admin_time_override","value",systemConfigService.getConfig("admin_time_override"),"description","管理员时间覆盖(YYYY-MM-DD,空=当前时间)")
+        ));
+    }
+
+    /** 设置管理员时间覆盖 */
+    @PutMapping("/admin-time")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> setAdminTime(@RequestParam(required = false) String date) {
+        systemConfigService.updateConfig("admin_time_override", date != null ? date : "");
+        return Result.success();
+    }
+
+    /** 获取当前有效时间 */
+    @GetMapping("/current-time")
+    public Result<String> getCurrentTime() {
+        String override = systemConfigService.getConfig("admin_time_override");
+        return Result.success(override != null && !override.isEmpty() ? override : java.time.LocalDate.now().toString());
+    }
+
+    /** 获取服务器时间戳（用于客户端时间校验） */
+    @GetMapping("/server-time")
+    public Result<Long> getServerTime() {
+        return Result.success(System.currentTimeMillis());
     }
     
     /**

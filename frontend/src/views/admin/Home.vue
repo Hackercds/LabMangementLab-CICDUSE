@@ -51,7 +51,20 @@
     <div class="main-content">
       <div class="content-header">
         <span>欢迎，{{ userInfo?.realName }}</span>
-        <el-button type="text" @click="handleLogout" style="margin-left: 20px;">退出登录</el-button>
+        <el-popover placement="bottom" :width="300" trigger="click">
+          <template #reference>
+            <el-badge :value="notifyCount" :hidden="notifyCount===0" style="margin:0 20px;cursor:pointer">
+              <el-icon :size="20"><Bell /></el-icon>
+            </el-badge>
+          </template>
+          <div v-if="notifications.length===0" style="color:#999;text-align:center">暂无通知</div>
+          <div v-for="n in notifications" :key="n.id" style="padding:8px 0;border-bottom:1px solid #eee">
+            <div style="font-weight:bold;font-size:13px">{{ n.title }}</div>
+            <div style="font-size:12px;color:#666">{{ n.content }}</div>
+            <div style="font-size:11px;color:#999">{{ n.publishTime }}</div>
+          </div>
+        </el-popover>
+        <el-button type="text" @click="handleLogout">退出登录</el-button>
       </div>
       <div class="content-body">
         <div class="card">
@@ -70,10 +83,28 @@ import {
 import { useUserStore } from '@/store'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import request from '@/api/request'
 
 const userStore = useUserStore()
 const router = useRouter()
 const userInfo = userStore.userInfo
+
+const notifyCount = ref(0)
+const notifications = ref([])
+
+async function loadNotifications() {
+  try {
+    const [cntRes, listRes] = await Promise.all([
+      request({ url: '/announcement/unread-count', method: 'get' }),
+      request({ url: '/announcement/my-notifications', method: 'get' })
+    ])
+    notifyCount.value = cntRes.data || 0
+    notifications.value = listRes.data || []
+  } catch {}
+}
+onMounted(loadNotifications)
+setInterval(loadNotifications, 30000) // 30秒刷新一次
 
 function handleLogout() {
   ElMessageBox.confirm('确定要退出登录吗？', '提示', {

@@ -34,6 +34,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store'
 import { login } from '@/api/auth'
 import { ElMessage } from 'element-plus'
+import request from '@/api/request'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -57,6 +58,14 @@ async function handleLogin() {
   loading.value = true
   try {
     const res = await login(form.value)
+    // 校验客户端与服务器时间偏差
+    try {
+      const tRes = await request.get('/system-config/server-time')
+      const diff = Math.abs(Date.now() - (tRes.data || 0))
+      if (diff > 300000) { // 超过5分钟
+        ElMessage.warning({ message: '您的设备时间与服务器时间相差较大（' + Math.round(diff/60000) + '分钟），如遇预约问题请联系管理员', duration: 8000 })
+      }
+    } catch {}
     userStore.setAuth(res.data)
     ElMessage.success('登录成功')
     const role = res.data.role

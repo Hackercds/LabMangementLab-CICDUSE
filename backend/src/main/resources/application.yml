@@ -36,15 +36,15 @@ spring:
     time-zone: Asia/Shanghai
 
 jwt:
-  secret: dev-lab-management-secret-key-2024
+  secret: ${JWT_SECRET:dev-lab-management-secret-key-2024}
   expiration: 86400000
 
 logging:
   level:
     root: info
-    com.labmanagement: debug
+    com.labmanagement: info
     org.springframework: info
-    org.mybatis: debug
+    org.mybatis: info
 
 mybatis-plus:
   configuration:
@@ -174,14 +174,10 @@ jwt:
 
 logging:
   level:
-    root: warn
+    root: info
     com.labmanagement: info
     org.springframework: warn
     org.mybatis: warn
-  file:
-    name: /var/log/lab-management/application.log
-    max-size: 50MB
-    max-history: 90
 
 mybatis-plus:
   configuration:

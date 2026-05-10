@@ -84,6 +84,7 @@
         <el-form-item label="开始时间"><el-time-picker v-model="createForm.startTime" format="HH:mm" value-format="HH:mm" /></el-form-item>
         <el-form-item label="结束时间"><el-time-picker v-model="createForm.endTime" format="HH:mm" value-format="HH:mm" /></el-form-item>
         <el-form-item label="事由"><el-input v-model="createForm.purpose" /></el-form-item>
+        <el-form-item label="强制覆盖"><el-switch v-model="createForm.force" /> 已有预约时自动拒绝</el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
@@ -129,7 +130,7 @@ const overviewDate = ref(''); const overviewData = ref([]); const overviewLoadin
 
 // Create dialog
 const createDialogVisible = ref(false); const creating = ref(false)
-const createForm = ref({ userId: null, labId: null, date: '', startTime: '', endTime: '', purpose: '' })
+const createForm = ref({ userId: null, labId: null, date: '', startTime: '', endTime: '', purpose: '', force: false })
 
 // Batch import
 const batchDialogVisible = ref(false); const importFile = ref(null); const importing = ref(false)
@@ -196,7 +197,8 @@ async function handleAdminCreate() {
       reservationDate: createForm.value.date,
       startTime: createForm.value.startTime,
       endTime: createForm.value.endTime,
-      purpose: createForm.value.purpose
+      purpose: createForm.value.purpose,
+      force: createForm.value.force
     }})
     ElMessage.success('预约创建成功')
     createDialogVisible.value = false

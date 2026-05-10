@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 公告服务
@@ -23,6 +24,26 @@ public class AnnouncementService {
 
     private final AnnouncementMapper announcementMapper;
     private final OperationLogService operationLogService;
+
+    /**
+     * 获取用户通知列表（publisher_id = 目标用户ID）
+     */
+    public List<Announcement> getMyNotifications(Long userId, int limit) {
+        LambdaQueryWrapper<Announcement> w = new LambdaQueryWrapper<>();
+        w.eq(Announcement::getPublisherId, userId)
+         .eq(Announcement::getStatus, "PUBLISHED")
+         .orderByDesc(Announcement::getPublishTime)
+         .last("LIMIT " + limit);
+        return announcementMapper.selectList(w);
+    }
+
+    /** 获取用户未读通知数量 */
+    public long countMyNotifications(Long userId) {
+        LambdaQueryWrapper<Announcement> w = new LambdaQueryWrapper<>();
+        w.eq(Announcement::getPublisherId, userId)
+         .eq(Announcement::getStatus, "PUBLISHED");
+        return announcementMapper.selectCount(w);
+    }
 
     /**
      * 前台分页查询已发布公告

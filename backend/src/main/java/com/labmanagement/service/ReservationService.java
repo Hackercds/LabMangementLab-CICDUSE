@@ -6,8 +6,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.labmanagement.common.exception.BusinessException;
 import com.labmanagement.common.exception.ConflictException;
 import com.labmanagement.common.result.ResultCode;
+import com.labmanagement.entity.Announcement;
 import com.labmanagement.entity.Reservation;
 import com.labmanagement.entity.User;
+import com.labmanagement.mapper.AnnouncementMapper;
 import com.labmanagement.mapper.ReservationMapper;
 import com.labmanagement.mapper.UserMapper;
 import lombok.Data;
@@ -36,21 +38,35 @@ public class ReservationService {
     private final OperationLogService operationLogService;
     private final SystemConfigService systemConfigService;
     private final UserMapper userMapper;
+    private final AnnouncementMapper announcementMapper;
+
+    private LocalDate getToday() {
+        String override = systemConfigService.getConfig("admin_time_override");
+        if (override != null && !override.isEmpty()) return LocalDate.parse(override);
+        return LocalDate.now();
+    }
+
+    private void validateDate(LocalDate date, LocalTime startTime) {
+        LocalDate today = getToday();
+        if (date.isBefore(today))
+            throw new BusinessException(ResultCode.FAIL.getCode(), "不能预约过去的日期");
+        if (date.isEqual(today) && startTime != null && LocalTime.now().isAfter(startTime))
+            throw new BusinessException(ResultCode.FAIL.getCode(), "不能预约已过的时间段");
+    }
 
     @Transactional
     public void create(Reservation reservation, Long userId) {
         int maxPerDay = systemConfigService.getIntConfig("max_reservation_per_day", 3);
         int todayCount = countUserReservationsToday(userId);
-        if (todayCount >= maxPerDay) {
-            throw new BusinessException(ResultCode.FAIL.getCode(), "今日预约次数已达上限");
-        }
+        if (todayCount >= maxPerDay) throw new BusinessException(ResultCode.FAIL.getCode(), "今日预约次数已达上限");
 
         int maxAdvanceDays = systemConfigService.getIntConfig("max_advance_days", 30);
-        LocalDate today = LocalDate.now();
+        LocalDate today = getToday();
         if (reservation.getReservationDate().isBefore(today) ||
-            reservation.getReservationDate().isAfter(today.plusDays(maxAdvanceDays))) {
+            reservation.getReservationDate().isAfter(today.plusDays(maxAdvanceDays)))
             throw new BusinessException(ResultCode.FAIL.getCode(), "预约日期超出允许范围");
-        }
+
+        validateDate(reservation.getReservationDate(), reservation.getStartTime());
 
         int conflictCount = reservationMapper.countConflict(
                 reservation.getLabId(),
@@ -106,28 +122,55 @@ public class ReservationService {
         reservation.setStatus("CANCELED");
         reservation.setUpdateTime(LocalDateTime.now());
         reservationMapper.updateById(reservation);
+        notifyUser(reservation.getUserId(), "预约已被管理员撤销",
+            "预约(" + reservation.getReservationDate() + " " + reservation.getStartTime() + "-" + reservation.getEndTime() + ")已被撤销");
         operationLogService.log(adminId, "ADMIN_CANCEL", "RESERVATION", "管理员撤销预约: " + id, null);
     }
 
     /**
-     * 管理员代他人创建预约
+     * 管理员代他人创建预约 (force=true时自动拒绝冲突)
      */
     @Transactional
-    public void createForUser(Reservation reservation, Long targetUserId, Long adminId) {
+    public void createForUser(Reservation reservation, Long targetUserId, Long adminId, boolean force) {
         User targetUser = userMapper.selectById(targetUserId);
-        if (targetUser == null) {
-            throw new BusinessException(404, "目标用户不存在");
+        if (targetUser == null) throw new BusinessException(404, "目标用户不存在");
+        validateDate(reservation.getReservationDate(), reservation.getStartTime());
+
+        if (force) {
+            List<Reservation> conflicts = reservationMapper.findConflicts(
+                reservation.getLabId(), reservation.getReservationDate(),
+                reservation.getStartTime(), reservation.getEndTime(), null);
+            for (Reservation c : conflicts) {
+                if ("APPROVED".equals(c.getStatus())) {
+                    c.setStatus("REJECTED"); c.setApproverId(adminId);
+                    c.setApproveTime(LocalDateTime.now());
+                    c.setApproveComment("管理员代申请覆盖");
+                    c.setUpdateTime(LocalDateTime.now());
+                    reservationMapper.updateById(c);
+                    notifyUser(c.getUserId(), "您的预约已被撤销",
+                        "预约(" + c.getReservationDate() + " " + c.getStartTime() + "-" + c.getEndTime() + ")被管理员覆盖");
+                }
+            }
         }
+
         reservation.setUserId(targetUserId);
-        reservation.setStatus("APPROVED");
-        reservation.setCreateTime(LocalDateTime.now());
-        reservation.setUpdateTime(LocalDateTime.now());
-        reservation.setApproverId(adminId);
+        reservation.setStatus("APPROVED"); reservation.setCreateTime(LocalDateTime.now());
+        reservation.setUpdateTime(LocalDateTime.now()); reservation.setApproverId(adminId);
         reservation.setApproveTime(LocalDateTime.now());
-        reservation.setApproveComment("管理员代申请");
+        reservation.setApproveComment(force ? "管理员代申请(强制)" : "管理员代申请");
         reservationMapper.insert(reservation);
+        notifyUser(targetUserId, "管理员已为您预约",
+            "实验室" + reservation.getLabId() + " " + reservation.getReservationDate() + " " + reservation.getStartTime() + "-" + reservation.getEndTime());
         operationLogService.log(adminId, "ADMIN_CREATE", "RESERVATION",
-                "管理员代用户" + targetUserId + "创建预约: " + reservation.getId(), null);
+                "管理员代用户" + targetUserId + "创建预约:" + reservation.getId(), null);
+    }
+
+    private void notifyUser(Long userId, String title, String content) {
+        Announcement a = new Announcement();
+        a.setTitle(title); a.setContent(content);
+        a.setPublisherId(userId); a.setPublishTime(LocalDateTime.now());
+        a.setStatus("PUBLISHED"); a.setCreateTime(LocalDateTime.now());
+        announcementMapper.insert(a);
     }
 
     /**
@@ -181,6 +224,8 @@ public class ReservationService {
                         conflict.setUpdateTime(LocalDateTime.now());
                         reservationMapper.updateById(conflict);
 
+                        notifyUser(conflict.getUserId(), "预约已被拒绝",
+                            "因冲突自动拒绝: " + conflict.getReservationDate() + " " + conflict.getStartTime() + "-" + conflict.getEndTime());
                         operationLogService.log(approverId, "REJECT", "RESERVATION",
                                 "因冲突自动拒绝预约: " + conflict.getId(), null);
                     }
@@ -208,6 +253,9 @@ public class ReservationService {
         reservation.setUpdateTime(LocalDateTime.now());
         reservationMapper.updateById(reservation);
 
+        notifyUser(reservation.getUserId(),
+            "预约" + ("APPROVED".equals(status) ? "通过" : "拒绝"),
+            "实验室" + reservation.getLabId() + " " + reservation.getReservationDate() + " " + reservation.getStartTime() + "-" + reservation.getEndTime() + " " + ("APPROVED".equals(status) ? "审批通过" : "已被拒绝"));
         operationLogService.log(approverId, "APPROVE", "RESERVATION",
                 "审批预约: " + id + " -> " + status, null);
     }
@@ -270,8 +318,6 @@ public class ReservationService {
             throw new BusinessException(ResultCode.RESERVATION_ALREADY_PROCESSED);
         }
 
-        String beforeSnapshot = JacksonUtil.toJson(reservation);
-
         List<Reservation> conflicts = reservationMapper.findConflicts(
                 reservation.getLabId(),
                 reservation.getReservationDate(),
@@ -292,6 +338,8 @@ public class ReservationService {
             conflict.setUpdateTime(LocalDateTime.now());
             reservationMapper.updateById(conflict);
 
+            notifyUser(conflict.getUserId(), "预约已被撤销",
+                "被强制审批覆盖: " + conflict.getReservationDate() + " " + conflict.getStartTime() + "-" + conflict.getEndTime());
             operationLogService.log(approverId, "REJECT", "RESERVATION",
                     "因冲突自动拒绝预约: " + conflict.getId(), null);
         }
@@ -303,11 +351,10 @@ public class ReservationService {
         reservation.setUpdateTime(LocalDateTime.now());
         reservationMapper.updateById(reservation);
 
-        String afterSnapshot = JacksonUtil.toJson(reservation);
-
-        operationLogService.logWithSnapshot(approverId, "APPROVE", "RESERVATION",
-                "强制审批预约: " + id + "，取消了 " + canceledConflicts.size() + " 个冲突预约", null,
-                beforeSnapshot, afterSnapshot);
+        notifyUser(reservation.getUserId(), "预约审批通过",
+            "强制审批: " + reservation.getReservationDate() + " " + reservation.getStartTime() + "-" + reservation.getEndTime());
+        operationLogService.log(approverId, "APPROVE", "RESERVATION",
+                "强制审批预约: " + id + "，取消了 " + canceledConflicts.size() + " 个冲突预约", null);
 
         return canceledConflicts;
     }
