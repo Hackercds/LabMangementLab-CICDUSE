@@ -65,45 +65,45 @@ pipeline {
 
                     echo "等待 MySQL 就绪..."
                     for i in $(seq 1 60); do
-                        docker exec lab-mysql mysql -uroot -e "SELECT 1" >/dev/null 2>&1 && { echo "MySQL 就绪"; break; }
+                        docker exec lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1 && { echo "MySQL 就绪"; break; }
                         sleep 2
                     done
                     # 确认 MySQL 真正可用
-                    docker exec lab-mysql mysql -uroot -e "SELECT 1" >/dev/null 2>&1 || { echo "❌ MySQL 未就绪，退出"; exit 1; }
+                    docker exec lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1 || { echo "❌ MySQL 未就绪，退出"; exit 1; }
 
                     # 数据库初始化逻辑
                     if [ "${RESET_DATABASE}" = "true" ]; then
                         echo "⚠ 删除并重建数据库..."
-                        docker exec lab-mysql mysql -uroot \
+                        docker exec lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                             -e "DROP DATABASE IF EXISTS ${MYSQL_DATABASE}; CREATE DATABASE ${MYSQL_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%'; FLUSH PRIVILEGES;"
                         echo "导入表结构..."
-                        docker exec -i lab-mysql mysql -uroot \
+                        docker exec -i lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                             --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql
                         echo "✅ 表结构导入完成"
                     else
                         echo "确保表结构存在（保留现有数据）..."
                         # 检查 user 表是否存在，不存在则完整导入，存在则用 -f 增量导入
-                        if docker exec lab-mysql mysql -uroot -e "SELECT 1 FROM user LIMIT 1" ${MYSQL_DATABASE} >/dev/null 2>&1; then
+                        if docker exec lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1 FROM user LIMIT 1" ${MYSQL_DATABASE} >/dev/null 2>&1; then
                             echo "数据库已有表，使用增量模式..."
-                            docker exec -i lab-mysql mysql -uroot \
+                            docker exec -i lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                                 --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
                                 < backend/src/main/resources/db/schema.sql || true
                         else
                             echo "数据库无表，完整导入..."
-                            docker exec -i lab-mysql mysql -uroot \
+                            docker exec -i lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                                 --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
                                 < backend/src/main/resources/db/schema.sql
                             echo "✅ 表结构导入完成"
                         fi
                         # 修复已有数据库的 JSON→TEXT 列类型
-                        docker exec lab-mysql mysql -uroot -f ${MYSQL_DATABASE} \
+                        docker exec lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -f ${MYSQL_DATABASE} \
                             -e "ALTER TABLE operation_log MODIFY COLUMN before_snapshot TEXT; ALTER TABLE operation_log MODIFY COLUMN after_snapshot TEXT;" 2>/dev/null || true
                     fi
 
                     if [ "${RESET_ADMIN}" = "true" ]; then
                         echo "重置管理员密码为 admin123..."
-                        docker exec lab-mysql mysql -uroot \
+                        docker exec lab-mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                             -e "DELETE FROM user WHERE username='\''admin'\''; INSERT INTO user (username,password,real_name,role,status) VALUES ('\''admin'\'', '\''PLACEHOLDER'\'', '\''系统管理员'\'', '\''ADMIN'\'', '\''ENABLED'\'');" ${MYSQL_DATABASE} 2>/dev/null || true
                         echo "已删除旧admin记录，应用启动后将自动创建新的admin/admin123"
                     fi
