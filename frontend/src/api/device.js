@@ -1,12 +1,11 @@
 import request from '@/api/request'
 
 // 获取设备列表
-export function getDeviceList(params) {
-  return request({
-    url: '/device/list',
-    method: 'get',
-    params
-  })
+export function getDeviceList(params = {}) {
+  const q = {}
+  if (params.labId) q.labId = params.labId
+  if (params.status) q.status = params.status
+  return request({ url: '/device/list', method: 'get', params: q })
 }
 
 // 分页查询设备

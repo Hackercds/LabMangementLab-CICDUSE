@@ -26,6 +26,8 @@ service.interceptors.request.use(
 // 响应拦截器：处理响应
 service.interceptors.response.use(
   response => {
+    // blob 响应（文件下载）直接返回
+    if (response.config.responseType === 'blob') return response.data
     const res = response.data
     if (res.code !== 200) {
       ElMessage({

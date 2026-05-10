@@ -128,7 +128,7 @@ function openBorrowDialog(device) {
 async function loadData() {
   loading.value = true
   try {
-    const res = await getDeviceList(queryForm.value.labId, queryForm.value.status)
+    const res = await getDeviceList({ labId: queryForm.value.labId, status: queryForm.value.status })
     tableData.value = res.data.map(item => ({
       ...item,
       labName: labMap.value[item.labId] || item.labId

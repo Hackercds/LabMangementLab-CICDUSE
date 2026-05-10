@@ -26,7 +26,16 @@ export function getDeviceBorrowStats(startDate, endDate) {
   })
 }
 
-// 导出实验室使用率Excel
-export function exportLabUsage(startDate, endDate) {
-  window.open(`/api/statistics/export/lab-usage?startDate=${startDate}&endDate=${endDate}`)
+// 导出实验室使用率Excel（带auth token）
+export async function exportLabUsage(startDate, endDate) {
+  const res = await request({
+    url: '/statistics/export/lab-usage',
+    method: 'get',
+    params: { startDate, endDate },
+    responseType: 'blob'
+  })
+  const url = window.URL.createObjectURL(new Blob([res]))
+  const a = document.createElement('a'); a.href = url
+  a.download = `lab-usage-${startDate}-${endDate}.xlsx`
+  a.click(); window.URL.revokeObjectURL(url)
 }
