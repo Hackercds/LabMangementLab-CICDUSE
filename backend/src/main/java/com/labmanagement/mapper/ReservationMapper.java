@@ -67,8 +67,10 @@ public interface ReservationMapper extends BaseMapper<Reservation> {
     /**
      * 查询指定日期某实验室已占用时间段
      */
-    @Select("SELECT start_time, end_time FROM reservation WHERE lab_id = #{labId} " +
+    @Select("SELECT start_time AS startTime, end_time AS endTime FROM reservation WHERE lab_id = #{labId} " +
             "AND reservation_date = #{date} AND status = 'APPROVED' AND deleted = 0")
+    @Results({@Result(column = "startTime", property = "startTime"),
+              @Result(column = "endTime", property = "endTime")})
     List<BusyTime> findBusyTimes(@Param("labId") Long labId, @Param("date") LocalDate date);
 
     /**
