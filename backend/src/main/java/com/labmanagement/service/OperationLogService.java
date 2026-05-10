@@ -3,12 +3,16 @@ package com.labmanagement.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.labmanagement.common.util.IPUtils;
 import com.labmanagement.entity.OperationLog;
 import com.labmanagement.mapper.OperationLogMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 
@@ -22,39 +26,36 @@ public class OperationLogService {
 
     private final OperationLogMapper operationLogMapper;
 
-    /**
-     * 记录操作日志
-     */
+    private String resolveIP(String ipAddress) {
+        if (ipAddress != null && !ipAddress.isEmpty()) return ipAddress;
+        try {
+            ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attrs != null) {
+                HttpServletRequest req = attrs.getRequest();
+                return IPUtils.getClientIP(req);
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     public void log(Long operatorId, String operationType, String module, String description, String ipAddress) {
         OperationLog log = new OperationLog();
-        log.setOperatorId(operatorId);
-        log.setOperationType(operationType);
-        log.setModule(module);
-        log.setDescription(description);
-        log.setIpAddress(ipAddress);
-        log.setOperationTime(LocalDateTime.now());
-        log.setCreateTime(LocalDateTime.now());
+        log.setOperatorId(operatorId); log.setOperationType(operationType);
+        log.setModule(module); log.setDescription(description);
+        log.setIpAddress(resolveIP(ipAddress));
+        log.setOperationTime(LocalDateTime.now()); log.setCreateTime(LocalDateTime.now());
         operationLogMapper.insert(log);
     }
 
-    /**
-     * 记录操作日志（含操作前后数据快照）
-     * @param beforeSnapshot 操作前数据JSON
-     * @param afterSnapshot  操作后数据JSON
-     */
     public void logWithSnapshot(Long operatorId, String operationType, String module,
                                  String description, String ipAddress,
                                  String beforeSnapshot, String afterSnapshot) {
         OperationLog log = new OperationLog();
-        log.setOperatorId(operatorId);
-        log.setOperationType(operationType);
-        log.setModule(module);
-        log.setDescription(description);
-        log.setIpAddress(ipAddress);
-        log.setBeforeSnapshot(beforeSnapshot);
-        log.setAfterSnapshot(afterSnapshot);
-        log.setOperationTime(LocalDateTime.now());
-        log.setCreateTime(LocalDateTime.now());
+        log.setOperatorId(operatorId); log.setOperationType(operationType);
+        log.setModule(module); log.setDescription(description);
+        log.setIpAddress(resolveIP(ipAddress));
+        log.setBeforeSnapshot(beforeSnapshot); log.setAfterSnapshot(afterSnapshot);
+        log.setOperationTime(LocalDateTime.now()); log.setCreateTime(LocalDateTime.now());
         operationLogMapper.insert(log);
     }
 

@@ -1,6 +1,7 @@
 package com.labmanagement.controller;
 
 import com.labmanagement.common.result.Result;
+import com.labmanagement.common.util.IPUtils;
 import com.labmanagement.entity.User;
 import com.labmanagement.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +47,7 @@ public class AuthController {
      */
     @PostMapping("/login")
     public Result<AuthService.LoginResponse> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        String ipAddress = httpRequest.getRemoteAddr();
+        String ipAddress = IPUtils.getClientIP(httpRequest);
         AuthService.LoginResponse response = authService.login(request.getUsername(), request.getPassword(), ipAddress);
         return Result.success(response);
     }
