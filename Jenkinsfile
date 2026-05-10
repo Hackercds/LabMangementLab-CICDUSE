@@ -63,10 +63,13 @@ pipeline {
                         -e TZ=Asia/Shanghai -v lab-mysql-data:/var/lib/mysql \
                         mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
 
+                    echo "等待 MySQL 就绪..."
                     for i in $(seq 1 60); do
-                        docker exec lab-mysql mysqladmin ping -uroot 2>/dev/null && { echo "MySQL 就绪"; break; }
+                        docker exec lab-mysql mysql -uroot -e "SELECT 1" >/dev/null 2>&1 && { echo "MySQL 就绪"; break; }
                         sleep 2
                     done
+                    # 确认 MySQL 真正可用
+                    docker exec lab-mysql mysql -uroot -e "SELECT 1" >/dev/null 2>&1 || { echo "❌ MySQL 未就绪，退出"; exit 1; }
 
                     # 数据库初始化逻辑
                     if [ "${RESET_DATABASE}" = "true" ]; then
@@ -77,11 +80,22 @@ pipeline {
                         docker exec -i lab-mysql mysql -uroot \
                             --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql
+                        echo "✅ 表结构导入完成"
                     else
                         echo "确保表结构存在（保留现有数据）..."
-                        docker exec -i lab-mysql mysql -uroot \
-                            --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
-                            < backend/src/main/resources/db/schema.sql || true
+                        # 检查 user 表是否存在，不存在则完整导入，存在则用 -f 增量导入
+                        if docker exec lab-mysql mysql -uroot -e "SELECT 1 FROM user LIMIT 1" ${MYSQL_DATABASE} >/dev/null 2>&1; then
+                            echo "数据库已有表，使用增量模式..."
+                            docker exec -i lab-mysql mysql -uroot \
+                                --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
+                                < backend/src/main/resources/db/schema.sql || true
+                        else
+                            echo "数据库无表，完整导入..."
+                            docker exec -i lab-mysql mysql -uroot \
+                                --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
+                                < backend/src/main/resources/db/schema.sql
+                            echo "✅ 表结构导入完成"
+                        fi
                         # 修复已有数据库的 JSON→TEXT 列类型
                         docker exec lab-mysql mysql -uroot -f ${MYSQL_DATABASE} \
                             -e "ALTER TABLE operation_log MODIFY COLUMN before_snapshot TEXT; ALTER TABLE operation_log MODIFY COLUMN after_snapshot TEXT;" 2>/dev/null || true
