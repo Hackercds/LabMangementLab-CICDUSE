@@ -83,7 +83,7 @@ pipeline {
                             < backend/src/main/resources/db/schema.sql || true
                         echo "重置管理员密码为 admin123..."
                         docker exec lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" \
-                            -e "INSERT INTO user (username,password,real_name,role,status) VALUES ('admin','\$2a\$10\$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW','系统管理员','ADMIN','ENABLED') ON DUPLICATE KEY UPDATE password=VALUES(password),status='ENABLED';" ${MYSQL_DATABASE} 2>/dev/null || true
+                            -e "INSERT INTO user (username,password,real_name,role,status) VALUES ('admin','\$2a\$10\$FxZYpfwfYGdl/e4v8DA6wuWGAmyV7HgBW1AmGLy2wL4BXpftdgT0C','系统管理员','ADMIN','ENABLED') ON DUPLICATE KEY UPDATE password=VALUES(password),status='ENABLED';" ${MYSQL_DATABASE} 2>/dev/null || true
                     fi
 
                     echo "Redis..."

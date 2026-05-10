@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS `system_config` (
 
 -- 初始化管理员账号（每次部署重置密码为 admin123）
 INSERT INTO `user` (username, password, real_name, role, status) VALUES
-('admin', '$2a$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', '系统管理员', 'ADMIN', 'ENABLED')
+('admin', '$2a$10$FxZYpfwfYGdl/e4v8DA6wuWGAmyV7HgBW1AmGLy2wL4BXpftdgT0C', '系统管理员', 'ADMIN', 'ENABLED')
 ON DUPLICATE KEY UPDATE password = VALUES(password), real_name = VALUES(real_name), role = VALUES(role), status = VALUES(status);
 
 -- 预置几个实验室数据
