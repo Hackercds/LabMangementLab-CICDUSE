@@ -64,32 +64,32 @@ pipeline {
                         mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
 
                     for i in $(seq 1 60); do
-                        docker exec lab-mysql mysqladmin ping -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" 2>/dev/null && { echo "MySQL 就绪"; break; }
+                        docker exec lab-mysql mysqladmin ping -uroot 2>/dev/null && { echo "MySQL 就绪"; break; }
                         sleep 2
                     done
 
                     # 数据库初始化逻辑
                     if [ "${RESET_DATABASE}" = "true" ]; then
                         echo "⚠ 删除并重建数据库..."
-                        docker exec lab-mysql mysql -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                        docker exec lab-mysql mysql -uroot \
                             -e "DROP DATABASE IF EXISTS ${MYSQL_DATABASE}; CREATE DATABASE ${MYSQL_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%'; FLUSH PRIVILEGES;"
                         echo "导入表结构..."
-                        docker exec -i lab-mysql mysql -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                        docker exec -i lab-mysql mysql -uroot \
                             --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql
                     else
                         echo "确保表结构存在（保留现有数据）..."
-                        docker exec -i lab-mysql mysql -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                        docker exec -i lab-mysql mysql -uroot \
                             --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql || true
                         # 修复已有数据库的 JSON→TEXT 列类型
-                        docker exec lab-mysql mysql -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" -f ${MYSQL_DATABASE} \
+                        docker exec lab-mysql mysql -uroot -f ${MYSQL_DATABASE} \
                             -e "ALTER TABLE operation_log MODIFY COLUMN before_snapshot TEXT; ALTER TABLE operation_log MODIFY COLUMN after_snapshot TEXT;" 2>/dev/null || true
                     fi
 
                     if [ "${RESET_ADMIN}" = "true" ]; then
                         echo "重置管理员密码为 admin123..."
-                        docker exec lab-mysql mysql -h localhost -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                        docker exec lab-mysql mysql -uroot \
                             -e "DELETE FROM user WHERE username='\''admin'\''; INSERT INTO user (username,password,real_name,role,status) VALUES ('\''admin'\'', '\''PLACEHOLDER'\'', '\''系统管理员'\'', '\''ADMIN'\'', '\''ENABLED'\'');" ${MYSQL_DATABASE} 2>/dev/null || true
                         echo "已删除旧admin记录，应用启动后将自动创建新的admin/admin123"
                     fi
