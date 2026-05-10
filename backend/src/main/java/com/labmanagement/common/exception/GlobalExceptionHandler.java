@@ -37,10 +37,9 @@ public class GlobalExceptionHandler {
      * 业务异常
      */
     @ExceptionHandler(BusinessException.class)
-    public Result<Void> handleBusinessException(BusinessException e, HttpServletRequest request,
-                                                  HttpServletResponse response) {
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Void> handleBusinessException(BusinessException e, HttpServletRequest request) {
         log.warn("业务异常: {} - {}", request.getRequestURI(), e.getMessage());
-        response.setStatus(e.getCode()); // 返回业务错误码对应的HTTP状态码
         return Result.fail(e.getCode(), e.getMessage());
     }
 

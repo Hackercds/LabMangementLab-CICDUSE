@@ -71,3 +71,18 @@ export function forceApproveReservation(id, comment = '') {
     params: { comment }
   })
 }
+
+// 管理员撤销预约
+export function adminCancelReservation(id) {
+  return request({ url: `/reservation/${id}/admin-cancel`, method: 'put' })
+}
+
+// 管理员代他人创建预约
+export function adminCreateReservation(data) {
+  return request({ url: '/reservation/admin-create', method: 'post', params: data })
+}
+
+// 某日全实验室预约概览
+export function getOverview(date) {
+  return request({ url: '/reservation/overview', method: 'get', params: { date } })
+}

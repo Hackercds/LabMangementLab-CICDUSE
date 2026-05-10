@@ -195,7 +195,8 @@ INSERT INTO `consumable` (name, specification, unit, current_stock, warning_thre
 ('网线', 'RJ45', '根', 15, 5, '储物柜B2');
 
 -- 初始化配置数据
-INSERT IGNORE INTO `system_config` (`config_key`, `config_value`, `description`) VALUES
-('auto_approve_teacher', 'false', '教师审批预约时是否自动审批无冲突预约'),
+INSERT INTO `system_config` (`config_key`, `config_value`, `description`) VALUES
+('auto_approve_teacher', 'true', '教师审批预约时是否自动审批无冲突预约'),
 ('reservation_max_days', '30', '最多可提前预约天数'),
-('reservation_max_per_day', '3', '每个学生每天最多预约次数');
+('reservation_max_per_day', '3', '每个学生每天最多预约次数')
+ON DUPLICATE KEY UPDATE config_value = VALUES(config_value), description = VALUES(description);
