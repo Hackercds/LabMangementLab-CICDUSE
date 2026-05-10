@@ -130,9 +130,107 @@ pipeline {
                         -p ${FRONTEND_PORT}:80 lab-frontend
 
                     if [ "${DEPLOY_MONITOR}" = "true" ]; then
-                        echo "部署监控..."
+                        echo "========================================"
+                        echo "        部署全栈监控系统"
+                        echo "========================================"
+
+                        echo ">>> 清理旧监控容器..."
                         docker rm -f lab-prometheus lab-grafana lab-alertmanager lab-loki lab-promtail lab-node-exporter lab-cadvisor lab-mysql-exporter lab-redis-exporter lab-blackbox-exporter 2>/dev/null || true
-                        (cd monitor && (docker compose -f docker-compose.monitoring.yml up -d 2>/dev/null || docker-compose -f docker-compose.monitoring.yml up -d 2>/dev/null || echo "监控启动失败，请检查Docker Compose"))
+                        docker volume create lab-prometheus-data lab-grafana-data lab-alertmanager-data lab-loki-data 2>/dev/null || true
+
+                        echo ">>> 同步监控配置到目标主机..."
+                        cd monitor
+                        tar czf - . | docker run --rm -i -v /opt/lab-monitor:/out alpine sh -c "cd /out && tar xzf - && ls -la"
+                        cd ..
+
+                        echo ">>> 启动 Prometheus..."
+                        docker run -d --name lab-prometheus --restart always --network lab-network --network-alias prometheus \
+                            -p 9090:9090 \
+                            -v /opt/lab-monitor/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro \
+                            -v /opt/lab-monitor/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro \
+                            -v lab-prometheus-data:/prometheus \
+                            prom/prometheus:v2.45.0 \
+                            --config.file=/etc/prometheus/prometheus.yml \
+                            --storage.tsdb.path=/prometheus \
+                            --storage.tsdb.retention.time=15d \
+                            --web.enable-lifecycle --web.enable-admin-api
+
+                        echo ">>> 启动 Alertmanager..."
+                        docker run -d --name lab-alertmanager --restart always --network lab-network --network-alias alertmanager \
+                            -p 9093:9093 \
+                            -v /opt/lab-monitor/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro \
+                            -v lab-alertmanager-data:/alertmanager \
+                            prom/alertmanager:v0.25.0 \
+                            --config.file=/etc/alertmanager/alertmanager.yml \
+                            --storage.path=/alertmanager
+
+                        echo ">>> 启动 Loki..."
+                        docker run -d --name lab-loki --restart always --network lab-network --network-alias loki \
+                            -p 3100:3100 \
+                            -v /opt/lab-monitor/loki/loki-config.yml:/etc/loki/local-config.yaml:ro \
+                            -v /opt/lab-monitor/loki/rules:/loki/rules:ro \
+                            -v lab-loki-data:/loki \
+                            grafana/loki:2.9.0 -config.file=/etc/loki/local-config.yaml
+
+                        echo ">>> 启动 Promtail..."
+                        docker run -d --name lab-promtail --restart always --network lab-network --network-alias promtail \
+                            -v /opt/lab-monitor/promtail/promtail-config.yml:/etc/promtail/config.yml:ro \
+                            -v /var/log:/var/log:ro \
+                            -v /var/lib/docker/containers:/var/lib/docker/containers:ro \
+                            -v /var/run/docker.sock:/var/run/docker.sock:ro \
+                            grafana/promtail:2.9.0 -config.file=/etc/promtail/config.yml
+
+                        echo ">>> 启动 Grafana..."
+                        docker run -d --name lab-grafana --restart always --network lab-network --network-alias grafana \
+                            -p 3001:3001 \
+                            -v /opt/lab-monitor/grafana/grafana.ini:/etc/grafana/grafana.ini:ro \
+                            -v /opt/lab-monitor/grafana/provisioning:/etc/grafana/provisioning:ro \
+                            -v lab-grafana-data:/var/lib/grafana \
+                            -e GF_SECURITY_ADMIN_USER=admin \
+                            -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
+                            -e GF_USERS_ALLOW_SIGN_UP=false \
+                            -e GF_INSTALL_PLUGINS=redis-datasource \
+                            grafana/grafana:10.0.0
+
+                        echo ">>> 启动 Node Exporter..."
+                        docker run -d --name lab-node-exporter --restart always --network lab-network --network-alias node-exporter \
+                            -p 9100:9100 \
+                            -v /proc:/host/proc:ro -v /sys:/host/sys:ro -v /:/rootfs:ro \
+                            prom/node-exporter:v1.6.0 \
+                            --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs \
+                            --collector.filesystem.mount-points-exclude='^/(sys|proc|dev|host|etc)($|/)'
+
+                        echo ">>> 启动 cAdvisor..."
+                        docker run -d --name lab-cadvisor --restart always --network lab-network --network-alias cadvisor \
+                            -p 8080:8080 \
+                            -v /:/rootfs:ro -v /var/run:/var/run:ro -v /sys:/sys:ro \
+                            -v /var/lib/docker/:/var/lib/docker:ro -v /dev/disk/:/dev/disk:ro \
+                            --privileged --device=/dev/kmsg \
+                            gcr.io/cadvisor/cadvisor:v0.47.0
+
+                        echo ">>> 启动 Blackbox Exporter..."
+                        docker run -d --name lab-blackbox-exporter --restart always --network lab-network --network-alias blackbox-exporter \
+                            -p 9115:9115 \
+                            -v /opt/lab-monitor/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro \
+                            prom/blackbox-exporter:v0.24.0
+
+                        echo ">>> 启动 MySQL Exporter..."
+                        docker run -d --name lab-mysql-exporter --restart always --network lab-network --network-alias mysql-exporter \
+                            -p 9104:9104 \
+                            -e DATA_SOURCE_NAME="root:${MYSQL_ROOT_PASSWORD}@(mysql:3306)/${MYSQL_DATABASE}" \
+                            prom/mysqld-exporter:v0.15.0
+
+                        echo ">>> 启动 Redis Exporter..."
+                        docker run -d --name lab-redis-exporter --restart always --network lab-network --network-alias redis-exporter \
+                            -p 9121:9121 \
+                            -e REDIS_ADDR=redis://redis:6379 \
+                            oliver006/redis_exporter:v1.50.0
+
+                        echo "========================================"
+                        echo "  监控系统部署完成"
+                        echo "  Grafana:  http://${HOST}:3001 (admin / admin123)"
+                        echo "  Prometheus: http://${HOST}:9090"
+                        echo "========================================"
                     fi
                 '''
             }
