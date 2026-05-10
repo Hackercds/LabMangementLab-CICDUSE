@@ -50,8 +50,8 @@ pipeline {
                     [ "${CLEAN_VOLUMES}" = "true" ] && for vol in $(docker volume ls -q | grep lab-redis-data); do docker volume rm "$vol" 2>/dev/null || true; done
 
                     docker network create lab-network 2>/dev/null || true
-                    docker volume create lab-mysql-data-${BUILD_NUMBER}
-                    docker volume create lab-redis-data-${BUILD_NUMBER}
+                    docker volume create lab-mysql-data
+                    docker volume create lab-redis-data
 
                     echo "MySQL..."
                     docker run -d --name lab-mysql --restart always --network lab-network --network-alias mysql \
@@ -59,7 +59,7 @@ pipeline {
                         -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
                         -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
                         -e MYSQL_USER="${MYSQL_USER}" -e MYSQL_PASSWORD="${MYSQL_PASSWORD}" \
-                        -e TZ=Asia/Shanghai -v lab-mysql-data-${BUILD_NUMBER}:/var/lib/mysql \
+                        -e TZ=Asia/Shanghai -v lab-mysql-data:/var/lib/mysql \
                         mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
 
                     for i in $(seq 1 60); do
@@ -81,6 +81,9 @@ pipeline {
                         docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                             --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql || true
+                        # 修复已有数据库的 JSON→TEXT 列类型
+                        docker exec lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" -f ${MYSQL_DATABASE} \
+                            -e "ALTER TABLE operation_log MODIFY COLUMN before_snapshot TEXT; ALTER TABLE operation_log MODIFY COLUMN after_snapshot TEXT;" 2>/dev/null || true
                     fi
 
                     if [ "${RESET_ADMIN}" = "true" ]; then
@@ -92,7 +95,7 @@ pipeline {
 
                     echo "Redis..."
                     docker run -d --name lab-redis --restart always --network lab-network --network-alias redis \
-                        -p 6379:6379 -v lab-redis-data-${BUILD_NUMBER}:/data \
+                        -p 6379:6379 -v lab-redis-data:/data \
                         redis:7-alpine redis-server --appendonly yes
                     sleep 3
 

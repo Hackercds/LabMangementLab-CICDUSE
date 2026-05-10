@@ -11,10 +11,11 @@ public final class JacksonUtil {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static String toJson(Object obj) {
+        if (obj == null) return "{}";
         try {
             return MAPPER.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            return obj.toString();
+        } catch (Exception e) {
+            return "{}";
         }
     }
 }
