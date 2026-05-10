@@ -1,10 +1,3 @@
-# ==================== 实验室管理系统 - 唯一配置文件 ====================
-# 所有环境配置集中于此文件，通过 SPRING_PROFILES_ACTIVE 切换
-# 配置来源: config/config.yaml → 环境变量 → 此文件默认值
-# 遵循 MICRO_SERVICE_SPEC.md 第 2.1 节 "唯一配置文件" 原则
-# =====================================================================
-
-# ==================== 默认配置 (dev环境) ====================
 server:
   port: ${SERVER_PORT:8081}
   servlet:
@@ -15,7 +8,6 @@ spring:
     name: ${SPRING_APPLICATION_NAME:lab-management}
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-
   datasource:
     url: jdbc:mysql://localhost:3306/lab_management?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
@@ -23,14 +15,12 @@ spring:
     hikari:
       minimum-idle: 2
       maximum-pool-size: 10
-
   data:
     redis:
       host: localhost
       port: 6379
       password:
       database: 0
-
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
@@ -42,7 +32,7 @@ jwt:
 logging:
   level:
     root: info
-    com.labmanagement: info
+    com.labmanagement: debug
     org.springframework: info
     org.mybatis: info
 
@@ -58,8 +48,6 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 management:
-    sampling:
-      probability: 1.0
   endpoints:
     web:
       exposure:
@@ -70,22 +58,12 @@ management:
 
 app:
   cors:
-    allowed-origins: http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000
+    allowed-origins: http://localhost:3000,http://localhost:8080
   security:
     rate-limit:
       enabled: false
-  storage:
-    type: local
-    local:
-      path: ./uploads-dev
-  notification:
-    email:
-      enabled: false
-    sms:
-      enabled: false
 
 ---
-# ==================== 测试环境 (test) ====================
 spring:
   config:
     activate:
@@ -113,16 +91,12 @@ logging:
     root: info
     com.labmanagement: debug
     org.springframework: info
-    org.mybatis: info
 
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
   endpoints:
     web:
       exposure:
@@ -131,25 +105,7 @@ management:
     health:
       show-details: when-authorized
 
-app:
-  cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://test.example.com}
-  security:
-    rate-limit:
-      enabled: true
-      requests-per-minute: 120
-  storage:
-    type: ${STORAGE_TYPE:local}
-    local:
-      path: ${STORAGE_LOCAL_PATH:/data/uploads/test}
-  notification:
-    email:
-      enabled: ${NOTIFICATION_EMAIL_ENABLED:false}
-    sms:
-      enabled: ${NOTIFICATION_SMS_ENABLED:false}
-
 ---
-# ==================== 生产环境 (prod) ====================
 spring:
   config:
     activate:
@@ -184,9 +140,7 @@ logging:
     org.springframework: warn
     org.mybatis: warn
   pattern:
-    # traceId/spanId 注入日志格式，Loki 可据此关联追踪
-    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
-
+    level: "%5p [%X{traceId:-},%X{spanId:-}]"
 
 mybatis-plus:
   configuration:
@@ -228,22 +182,3 @@ app:
     rate-limit:
       enabled: true
       requests-per-minute: 60
-  storage:
-    type: ${STORAGE_TYPE:local}
-    local:
-      path: ${STORAGE_LOCAL_PATH:/data/uploads}
-    max-size: 20MB
-  business:
-    reservation:
-      max-days-in-advance: 30
-      max-hours-per-day: 8
-    device:
-      max-borrow-days: 30
-    consumable:
-      warning-threshold: 10
-      auto-warning-enabled: true
-  notification:
-    email:
-      enabled: ${NOTIFICATION_EMAIL_ENABLED:false}
-    sms:
-      enabled: ${NOTIFICATION_SMS_ENABLED:false}
