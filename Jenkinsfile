@@ -5,7 +5,7 @@ pipeline {
         string(name: 'DEPLOY_HOST', defaultValue: '', description: '覆盖config.yaml中的app.host')
         booleanParam(name: 'CLEAN_VOLUMES', defaultValue: false, description: '☠ 清空所有数据卷（谨慎！）')
         booleanParam(name: 'RESET_DATABASE', defaultValue: false, description: '☠ 删除并重建数据库（谨慎！）')
-        booleanParam(name: 'RESET_ADMIN', defaultValue: false, description: '仅重置管理员密码为admin123')
+        booleanParam(name: 'RESET_ADMIN', defaultValue: true, description: '重置管理员密码为admin123（默认开启）')
     }
 
     stages {
