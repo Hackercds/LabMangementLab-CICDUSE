@@ -12,6 +12,9 @@
         <el-form-item label="密码" prop="password">
           <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" prefix-icon="el-icon-lock" />
         </el-form-item>
+        <el-form-item v-if="errorMsg">
+          <el-alert :title="errorMsg" type="error" show-icon :closable="false" />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleLogin" :loading="loading" style="width: 100%;">
             登录
@@ -40,6 +43,7 @@ const form = ref({
   password: ''
 })
 const loading = ref(false)
+const errorMsg = ref('')
 
 const rules = {
   username: [{ required: true, message: '请输入学号/工号', trigger: 'blur' }],
@@ -47,6 +51,7 @@ const rules = {
 }
 
 async function handleLogin() {
+  errorMsg.value = ''
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
   loading.value = true
@@ -63,7 +68,7 @@ async function handleLogin() {
       router.push('/student/home')
     }
   } catch (e) {
-    console.error(e)
+    errorMsg.value = e?.message || e || '登录失败，请检查账号密码'
   } finally {
     loading.value = false
   }

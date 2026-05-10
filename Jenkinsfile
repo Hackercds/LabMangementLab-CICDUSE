@@ -65,9 +65,17 @@ pipeline {
                         sleep 2
                     done
 
-                    docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" \
-                        --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
-                        < backend/src/main/resources/db/schema.sql || true
+                    # 自动检测数据库是否已有数据
+                    HAS_DATA=$(docker exec lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" -sN \
+                        -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${MYSQL_DATABASE}' AND table_name='user' AND table_rows > 0" 2>/dev/null || echo "0")
+                    if [ "${HAS_DATA}" = "0" ]; then
+                        echo "首次部署，初始化数据库..."
+                        docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                            --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
+                            < backend/src/main/resources/db/schema.sql
+                    else
+                        echo "数据库已有数据，跳过初始化"
+                    fi
 
                     echo "Redis..."
                     docker run -d --name lab-redis --restart always --network lab-network --network-alias redis \

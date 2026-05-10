@@ -19,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import java.util.List;
@@ -36,9 +37,10 @@ public class GlobalExceptionHandler {
      * 业务异常
      */
     @ExceptionHandler(BusinessException.class)
-    @ResponseStatus(HttpStatus.OK)
-    public Result<Void> handleBusinessException(BusinessException e, HttpServletRequest request) {
+    public Result<Void> handleBusinessException(BusinessException e, HttpServletRequest request,
+                                                  HttpServletResponse response) {
         log.warn("业务异常: {} - {}", request.getRequestURI(), e.getMessage());
+        response.setStatus(e.getCode()); // 返回业务错误码对应的HTTP状态码
         return Result.fail(e.getCode(), e.getMessage());
     }
 

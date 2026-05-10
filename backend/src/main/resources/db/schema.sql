@@ -176,9 +176,10 @@ CREATE TABLE IF NOT EXISTS `system_config` (
     INDEX idx_config_key(config_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
 
--- 初始化数据：预置管理员账号，密码是 admin123 (BCrypt加密)
+-- 初始化管理员账号（每次部署重置密码为 admin123）
 INSERT INTO `user` (username, password, real_name, role, status) VALUES
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EHsM8', '系统管理员', 'ADMIN', 'ENABLED');
+('admin', '$2a$10$CgNT9cdBi21.gNYtDwHiUeK3.0AGczNorbrEklIbeKC/rilrlmLqW', '系统管理员', 'ADMIN', 'ENABLED')
+ON DUPLICATE KEY UPDATE password = VALUES(password), real_name = VALUES(real_name), role = VALUES(role), status = VALUES(status);
 
 -- 预置几个实验室数据
 INSERT INTO `lab` (name, location, capacity, device_count, status) VALUES
