@@ -178,6 +178,14 @@ logging:
     com.labmanagement: info
     org.springframework: warn
     org.mybatis: warn
+  pattern:
+    # traceId/spanId 注入日志格式，Loki 可据此关联追踪
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # 全量采样（生产可按需降低）
 
 mybatis-plus:
   configuration:

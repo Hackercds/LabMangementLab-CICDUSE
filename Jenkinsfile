@@ -6,6 +6,7 @@ pipeline {
         booleanParam(name: 'CLEAN_VOLUMES', defaultValue: false, description: '☠ 清空所有数据卷（谨慎！）')
         booleanParam(name: 'RESET_DATABASE', defaultValue: false, description: '☠ 删除并重建数据库（谨慎！）')
         booleanParam(name: 'RESET_ADMIN', defaultValue: true, description: '重置管理员密码为admin123（默认开启）')
+        booleanParam(name: 'DEPLOY_MONITOR', defaultValue: false, description: '部署监控系统（Grafana+Prometheus）')
     }
 
     stages {
@@ -113,6 +114,12 @@ pipeline {
                     echo "前端..."
                     docker run -d --name lab-frontend --restart always --network lab-network \
                         -p ${FRONTEND_PORT}:80 lab-frontend
+
+                    if [ "${DEPLOY_MONITOR}" = "true" ]; then
+                        echo "部署监控..."
+                        docker rm -f lab-prometheus lab-grafana 2>/dev/null || true
+                        cd monitor && docker-compose -f docker-compose.monitoring.yml up -d && cd ..
+                    fi
                 '''
             }
         }
