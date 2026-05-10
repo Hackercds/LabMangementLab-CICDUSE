@@ -147,9 +147,19 @@ public class ReservationController {
      */
     @PostMapping("/admin-create")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> adminCreate(@RequestBody Reservation reservation,
-                                     @RequestParam Long targetUserId,
+    public Result<Void> adminCreate(@RequestParam Long targetUserId,
+                                     @RequestParam Long labId,
+                                     @RequestParam String reservationDate,
+                                     @RequestParam String startTime,
+                                     @RequestParam String endTime,
+                                     @RequestParam(required = false) String purpose,
                                      @RequestAttribute Long userId) {
+        Reservation reservation = new Reservation();
+        reservation.setLabId(labId);
+        reservation.setReservationDate(LocalDate.parse(reservationDate));
+        reservation.setStartTime(java.time.LocalTime.parse(startTime));
+        reservation.setEndTime(java.time.LocalTime.parse(endTime));
+        reservation.setPurpose(purpose);
         reservationService.createForUser(reservation, targetUserId, userId);
         return Result.success();
     }
