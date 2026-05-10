@@ -13,9 +13,11 @@ public class LabManagementApplication {
         ConfigurableApplicationContext ctx = SpringApplication.run(LabManagementApplication.class, args);
         String port = ctx.getEnvironment().getProperty("server.port", "8080");
         String contextPath = ctx.getEnvironment().getProperty("server.servlet.context-path", "");
+        String jwtSecret = ctx.getEnvironment().getProperty("jwt.secret", "");
         System.out.println("====================================");
         System.out.println("实验室管理系统启动成功！");
         System.out.println("访问地址: http://0.0.0.0:" + port + contextPath);
+        System.out.println("JWT密钥长度: " + (jwtSecret != null ? jwtSecret.length() : 0));
         System.out.println("====================================");
     }
 }
