@@ -38,13 +38,8 @@ public class AdminInitializer implements CommandLineRunner {
             admin.setRole("ADMIN");
             admin.setStatus("ENABLED");
             userMapper.insert(admin);
-            log.info("管理员账号已创建: admin / {}", defaultPassword);
-        } else {
-            admin.setPassword(hash);
-            admin.setStatus("ENABLED");
-            admin.setRole("ADMIN");
-            userMapper.updateById(admin);
-            log.info("管理员密码已重置: admin / {}", defaultPassword);
+            log.info("首次启动: 管理员账号已创建 admin / {}", defaultPassword);
         }
+        // 管理员已存在则不修改密码，防止重启覆盖用户自定义密码
     }
 }

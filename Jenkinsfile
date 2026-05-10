@@ -5,6 +5,7 @@ pipeline {
         string(name: 'DEPLOY_HOST', defaultValue: '', description: '覆盖config.yaml中的app.host')
         booleanParam(name: 'CLEAN_VOLUMES', defaultValue: false, description: '☠ 清空所有数据卷（谨慎！）')
         booleanParam(name: 'RESET_DATABASE', defaultValue: false, description: '☠ 删除并重建数据库（谨慎！）')
+        booleanParam(name: 'RESET_ADMIN', defaultValue: false, description: '仅重置管理员密码为admin123')
     }
 
     stages {
@@ -76,14 +77,17 @@ pipeline {
                             --default-character-set=utf8mb4 ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql
                     else
-                        # 仅确保表存在（不删数据），只重置管理员密码
                         echo "确保表结构存在（保留现有数据）..."
                         docker exec -i lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" \
                             --default-character-set=utf8mb4 -f ${MYSQL_DATABASE} \
                             < backend/src/main/resources/db/schema.sql || true
+                    fi
+
+                    if [ "${RESET_ADMIN}" = "true" ]; then
                         echo "重置管理员密码为 admin123..."
                         docker exec lab-mysql mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" \
-                            -e "INSERT INTO user (username,password,real_name,role,status) VALUES ('admin','\$2a\$10\$FxZYpfwfYGdl/e4v8DA6wuWGAmyV7HgBW1AmGLy2wL4BXpftdgT0C','系统管理员','ADMIN','ENABLED') ON DUPLICATE KEY UPDATE password=VALUES(password),status='ENABLED';" ${MYSQL_DATABASE} 2>/dev/null || true
+                            -e "DELETE FROM user WHERE username='\''admin'\''; INSERT INTO user (username,password,real_name,role,status) VALUES ('\''admin'\'', '\''PLACEHOLDER'\'', '\''系统管理员'\'', '\''ADMIN'\'', '\''ENABLED'\'');" ${MYSQL_DATABASE} 2>/dev/null || true
+                        echo "已删除旧admin记录，应用启动后将自动创建新的admin/admin123"
                     fi
 
                     echo "Redis..."
