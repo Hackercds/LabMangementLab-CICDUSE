@@ -10,6 +10,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestAttribute;
 
+import java.util.List;
+
 /**
  * 公告控制器
  */
