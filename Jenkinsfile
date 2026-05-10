@@ -117,8 +117,8 @@ pipeline {
 
                     if [ "${DEPLOY_MONITOR}" = "true" ]; then
                         echo "部署监控..."
-                        docker rm -f lab-prometheus lab-grafana 2>/dev/null || true
-                        cd monitor && docker-compose -f docker-compose.monitoring.yml up -d && cd ..
+                        docker rm -f lab-prometheus lab-grafana lab-alertmanager lab-loki lab-promtail lab-node-exporter lab-cadvisor lab-mysql-exporter lab-redis-exporter lab-blackbox-exporter 2>/dev/null || true
+                        (cd monitor && (docker compose -f docker-compose.monitoring.yml up -d 2>/dev/null || docker-compose -f docker-compose.monitoring.yml up -d 2>/dev/null || echo "监控启动失败，请检查Docker Compose"))
                     fi
                 '''
             }
