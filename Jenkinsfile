@@ -143,7 +143,8 @@ pipeline {
                         echo ">>> 同步监控配置到目标主机..."
                         MONITOR_SYNC_OK=true
                         cd monitor
-                        docker run --rm -v /opt/lab-monitor:/out alpine sh -c "rm -rf /out/*"
+                        # 完全清理旧配置再解压新配置
+                        docker run --rm -v /opt/lab-monitor:/out alpine sh -c "cd /out && rm -rf ./* ./.* 2>/dev/null; ls -la /out"
                         tar czf - . | docker run --rm -i -v /opt/lab-monitor:/out alpine sh -c "cd /out && tar xzf - && ls -la /out && echo '配置同步完成'" || MONITOR_SYNC_OK=false
                         cd ..
 

@@ -55,10 +55,17 @@ scrape_configs:
             values: ["^lab-"]
     relabel_configs:
       - source_labels: ['__meta_docker_container_name']
+        regex: '/lab-(.+)'
+        target_label: 'service'
+      - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'container'
       - source_labels: ['__meta_docker_container_log_stream']
         target_label: 'stream'
+      - target_label: 'job'
+        replacement: 'lab-management'
+      - target_label: 'environment'
+        replacement: 'production'
     pipeline_stages:
       - json:
           expressions:

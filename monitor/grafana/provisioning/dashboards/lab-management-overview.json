@@ -265,7 +265,7 @@
       },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100",
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100 and jvm_memory_max_bytes{area=\"heap\"} > 0",
           "refId": "A"
         }
       ],

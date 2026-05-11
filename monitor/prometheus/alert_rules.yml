@@ -22,7 +22,7 @@ groups:
   - name: jvm_alerts
     rules:
       - alert: JvmHighMemoryUsage
-        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85 and jvm_memory_max_bytes{area="heap"} > 0
         for: 5m
         labels:
           severity: warning
@@ -31,7 +31,7 @@ groups:
           description: "实例 {{ $labels.instance }} 的JVM堆内存使用率超过85%，当前值: {{ $value | humanizePercentage }}"
 
       - alert: JvmMemoryCritical
-        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.95
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.95 and jvm_memory_max_bytes{area="heap"} > 0
         for: 2m
         labels:
           severity: critical
