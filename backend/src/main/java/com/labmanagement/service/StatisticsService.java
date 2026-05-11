@@ -1,6 +1,7 @@
 package com.labmanagement.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.labmanagement.common.cache.CacheComponent;
 import com.labmanagement.entity.*;
 import com.labmanagement.mapper.*;
 import lombok.Data;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class StatisticsService {
     private final DeviceMapper deviceMapper;
     private final ConsumableMapper consumableMapper;
     private final UserMapper userMapper;
+    private final CacheComponent cacheComponent;
 
     @Data
     public static class DashboardStats {
@@ -66,6 +69,10 @@ public class StatisticsService {
     }
 
     public DashboardStats getDashboardStats() {
+        String cacheKey = "stats:dashboard";
+        DashboardStats cached = cacheComponent.getObject(cacheKey, DashboardStats.class);
+        if (cached != null) return cached;
+
         DashboardStats stats = new DashboardStats();
         LocalDate today = LocalDate.now();
 
@@ -97,6 +104,7 @@ public class StatisticsService {
         } else {
             stats.setLabUsageRate(BigDecimal.ZERO);
         }
+        cacheComponent.setObject(cacheKey, stats, 30, TimeUnit.SECONDS);
         return stats;
     }
 

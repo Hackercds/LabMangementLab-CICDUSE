@@ -130,6 +130,20 @@ npm run test:e2e
 npm run test:coverage
 ```
 
+### JMeter 性能测试
+
+```bash
+cd test/jmeter
+
+# 命令行模式（正式压测，生成 HTML 报告）
+jmeter -n -t 实验室管理系统综合性能测试.jmx -l result.jtl -e -o report/
+
+# GUI 模式（编辑/调试）
+jmeter -t 实验室管理系统综合性能测试.jmx
+```
+
+测试覆盖：7 个线程组，500 并发 × 600s，JWT 鉴权，预约/设备/审批竞态，260 RPS/接口目标。
+
 ---
 
 ## 📦 构建命令
@@ -268,6 +282,8 @@ redis-cli DBSIZE
 | Loki | 3100 | 日志 |
 | Alertmanager | 9093 | 告警 |
 | cAdvisor | 8080 | 容器监控 |
+| mysql-exporter | 9104 | MySQL 指标导出 |
+| redis-exporter | 9121 | Redis 指标导出 |
 
 ---
 
@@ -290,6 +306,8 @@ redis-cli DBSIZE
 | Grafana | http://localhost:3001 | admin/admin123 |
 | Alertmanager | http://localhost:9093 | - |
 | cAdvisor | http://localhost:8080 | - |
+| mysql-exporter | http://localhost:9104/metrics | Prometheus 抓取 |
+| redis-exporter | http://localhost:9121/metrics | Prometheus 抓取 |
 
 ---
 

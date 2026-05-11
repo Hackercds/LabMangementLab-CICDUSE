@@ -69,7 +69,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_ROOT_URL=http://localhost:3001
-      - GF_INSTALL_PLUGINS=redis-datasource,grafana-clock-panel,grafana-piechart-panel
     networks:
       - lab-network
     depends_on:

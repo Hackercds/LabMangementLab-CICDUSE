@@ -1,5 +1,6 @@
 package com.labmanagement.controller;
 
+import com.labmanagement.common.ratelimit.RateLimit;
 import com.labmanagement.common.result.Result;
 import com.labmanagement.common.util.IPUtils;
 import com.labmanagement.entity.User;
@@ -45,6 +46,7 @@ public class AuthController {
     /**
      * 用户登录
      */
+    @RateLimit(key = "login", limit = 20, timeout = 60)
     @PostMapping("/login")
     public Result<AuthService.LoginResponse> login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String ipAddress = IPUtils.getClientIP(httpRequest);
@@ -55,6 +57,7 @@ public class AuthController {
     /**
      * 用户注册
      */
+    @RateLimit(key = "register", limit = 5, timeout = 60)
     @PostMapping("/register")
     public Result<Void> register(@RequestBody RegisterRequest request) {
         authService.register(request.getUsername(), request.getPassword(), request.getRealName(), request.getRole());

@@ -71,23 +71,40 @@ retryComponent.executeWithRetry(() -> {
 
 ### 3. 限流
 
-#### 3.1 使用方式
+#### 3.1 限流端点
 
-```java
-@PostMapping("/api/resource")
-@RateLimit(key = "resource_create", limit = 10, timeout = 1)
-public Result<Void> createResource(@RequestBody ResourceDTO dto) {
-    // 业务逻辑
-    return Result.success();
-}
+| 端点 | Key | 限制 | 窗口 |
+|------|-----|------|------|
+| `POST /api/auth/login` | `login` | 20次 | 60秒 |
+| `POST /api/auth/register` | `register` | 5次 | 60秒 |
+| `POST /api/reservation` | `reservation:create` | 30次 | 60秒 |
+| `POST /api/device/{id}/borrow` | `device:borrow` | 20次 | 60秒 |
+
+#### 3.2 全局开关 — 三种控制方式
+
+| 方式 | 配置 | 说明 |
+|------|------|------|
+| **application.yml** | `app.security.rate-limit.enabled` | dev 默认 `false`，prod 默认 `${RATE_LIMIT_ENABLED:false}` |
+| **环境变量** | `RATE_LIMIT_ENABLED=true` | 启动时注入，覆盖 yml 配置 |
+| **Jenkins 部署** | `ENABLE_RATE_LIMIT` 参数 | 部署时勾选复选框（默认关闭） |
+
+**Jenkins 部署流程**：
+```
+Jenkins 参数 ENABLE_RATE_LIMIT → 环境变量 RATE_LIMIT_ENABLED
+  → application.yml ${RATE_LIMIT_ENABLED:false}
+    → RateLimitAspect 读取 app.security.rate-limit.enabled
+      → false: 直接放行，零开销
+      → true:  Redis INCR + TTL 滑动窗口限流
 ```
 
-#### 3.2 限流策略
+**压测/开发建议**：关闭限流（默认），避免并发测试被拦截。
+**生产建议**：开启限流，防暴力破解和接口滥用。
 
-- 基于Redis实现
-- 支持自定义Key
-- 支持自定义限流次数
-- 支持自定义时间窗口
+#### 3.3 限流策略
+
+- 基于 Redis `INCR` + TTL 实现滑动窗口
+- 支持自定义 Key（通过 `@RateLimit.key()` 指定）
+- 超限时抛出 `RuntimeException("请求频率超限，请稍后重试")`
 
 ### 4. 缓存
 
@@ -113,12 +130,30 @@ boolean exists = cacheComponent.exists("user:1");
 long count = cacheComponent.increment("counter");
 ```
 
-#### 4.2 缓存策略
+#### 4.2 已接入缓存的服务
 
-- 缓存类型: Redis
-- 默认过期时间: 1小时
-- 支持自定义过期时间
-- 支持自增/自减操作
+| 服务 | 缓存 Key | TTL | 模式 |
+|------|---------|-----|------|
+| `StatisticsService.getDashboardStats()` | `stats:dashboard` | 30s | cache-aside（自动过期） |
+| `LabService.listAll()` | `lab:list:all` | 300s | cache-aside（写操作主动删除） |
+| `ConsumableService.listAll()` | `consumable:list:all` | 300s | cache-aside（写操作主动删除） |
+| `AnnouncementService.publicPageList()` | `announcement:public:list` | 120s | cache-aside（仅缓存第1页） |
+
+#### 4.3 CacheComponent API
+
+支持 String 和 JSON 对象两种缓存模式：
+```java
+// String 缓存
+cacheComponent.set("key", "value", 3600, TimeUnit.SECONDS);
+String val = cacheComponent.get("key");
+
+// JSON 对象缓存（自动 Jackson 序列化/反序列化）
+cacheComponent.setObject("stats:dashboard", stats, 30, TimeUnit.SECONDS);
+DashboardStats cached = cacheComponent.getObject("stats:dashboard", DashboardStats.class);
+
+// 批量失效
+cacheComponent.deleteByPattern("lab:*");
+```
 
 ### 5. 日志追踪
 
@@ -259,9 +294,17 @@ monitorComponent.sendAlert("WARNING", "内存使用率过高");
 
 #### 9.4 自动监控
 
-系统每分钟自动监控以下指标：
-- 内存使用率（>90%严重告警，>80%警告）
-- 线程数（>200警告）
+`MonitorComponent` 每 60 秒自动检查并记录：
+
+| 指标 | Micrometer Gauge | 告警阈值 |
+|------|-----------------|----------|
+| JVM 内存使用率 | `app.memory.usage.percent` | >90% CRITICAL, >80% WARNING |
+| 活跃线程数 | `app.thread.count` | >200 WARNING |
+
+#### 9.5 Prometheus 暴露
+
+监控指标通过 Micrometer 注册到 `/actuator/prometheus`，可由 Prometheus 自动抓取并在 Grafana 中展示。
+Redis 指标通过 `redis-exporter` → Prometheus → Grafana 链路获取，无需额外插件。
 
 ## 📊 可靠性指标
 

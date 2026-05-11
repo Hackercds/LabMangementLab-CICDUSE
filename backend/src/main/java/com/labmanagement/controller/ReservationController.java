@@ -3,6 +3,7 @@ package com.labmanagement.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.labmanagement.common.exception.BusinessException;
 import com.labmanagement.common.exception.ConflictException;
+import com.labmanagement.common.ratelimit.RateLimit;
 import com.labmanagement.common.result.Result;
 import com.labmanagement.common.result.ResultCode;
 import com.labmanagement.entity.Reservation;
@@ -90,6 +91,7 @@ public class ReservationController {
     /**
      * 提交预约申请
      */
+    @RateLimit(key = "reservation:create", limit = 30, timeout = 60)
     @PostMapping
     public Result<Void> create(@RequestBody Reservation reservation, @RequestAttribute Long userId) {
         reservationService.create(reservation, userId);

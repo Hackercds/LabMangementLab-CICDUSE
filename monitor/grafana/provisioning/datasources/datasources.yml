@@ -46,11 +46,12 @@ datasources:
     secureJsonData:
       password: root123456
 
-  - name: Redis
-    type: redis-datasource
-    access: proxy
-    url: redis://redis:6379
-    jsonData:
-      client: standalone
-      poolSize: 5
-      timeout: 10
+  # Redis 数据源需要 redis-datasource 插件，暂时注释（容器无外网时无法下载）
+  # - name: Redis
+  #   type: redis-datasource
+  #   access: proxy
+  #   url: redis://redis:6379
+  #   jsonData:
+  #     client: standalone
+  #     poolSize: 5
+  #     timeout: 10

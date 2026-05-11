@@ -1,6 +1,7 @@
 package com.labmanagement.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.labmanagement.common.ratelimit.RateLimit;
 import com.labmanagement.common.result.Result;
 import com.labmanagement.entity.Device;
 import com.labmanagement.service.DeviceService;
@@ -90,6 +91,7 @@ public class DeviceController {
     /**
      * 借用设备
      */
+    @RateLimit(key = "device:borrow", limit = 20, timeout = 60)
     @PostMapping("/{id}/borrow")
     public Result<Void> borrow(
             @PathVariable Long id,

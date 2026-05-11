@@ -1,7 +1,7 @@
 # 实验室管理系统 - 项目架构文档
 
-> 版本: 1.1.0
-> 更新日期: 2026-05-10
+> 版本: 1.2.0
+> 更新日期: 2026-05-11
 
 ---
 
@@ -320,11 +320,13 @@ public class RetryComponent {
     }
 }
 
-// 限流组件
+// 限流组件 — 已标注端点：login(20/min), register(5/min), reservation:create(30/min), device:borrow(20/min)
+// 全局开关：app.security.rate-limit.enabled（默认false，生产true）
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RateLimit {
-    int value() default 100;
+    String key() default "";
+    int limit() default 10;
     int timeout() default 1;
 }
 ```
@@ -741,9 +743,10 @@ public CorsConfigurationSource corsConfigurationSource() {
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| 1.2.0 | 2026-05-11 | 教师自动审批、Redis缓存接入(4服务)、@RateLimit端点限流、Monitor→Micrometer/Prometheus、JMeter重写(500并发)、Excel导出修复、预约过滤增强 |
 | 1.1.0 | 2026-05-10 | 数据库重构(device_borrow_history)、操作日志快照、并发安全性修复 |
 | 1.0.0 | 2026-04 | 初始版本发布 |
 
 ---
 
-**最后更新**: 2026-05-10
+**最后更新**: 2026-05-11

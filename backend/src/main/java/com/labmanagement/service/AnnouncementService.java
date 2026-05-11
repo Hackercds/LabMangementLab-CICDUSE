@@ -3,6 +3,7 @@ package com.labmanagement.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.labmanagement.common.cache.CacheComponent;
 import com.labmanagement.entity.Announcement;
 import com.labmanagement.mapper.AnnouncementMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 公告服务
@@ -24,6 +26,9 @@ public class AnnouncementService {
 
     private final AnnouncementMapper announcementMapper;
     private final OperationLogService operationLogService;
+    private final CacheComponent cacheComponent;
+
+    private static final String CACHE_KEY_LIST = "announcement:public:list";
 
     /**
      * 获取用户通知列表（publisher_id = 目标用户ID）
@@ -49,12 +54,21 @@ public class AnnouncementService {
      * 前台分页查询已发布公告
      */
     public IPage<Announcement> publicPageList(Integer current, Integer size) {
+        // 仅缓存第一页
+        if (current == 1) {
+            IPage<Announcement> cached = cacheComponent.getObject(CACHE_KEY_LIST, Page.class);
+            if (cached != null && cached.getRecords() != null && !cached.getRecords().isEmpty()) return cached;
+        }
+
         Page<Announcement> page = new Page<>(current, size);
         LambdaQueryWrapper<Announcement> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Announcement::getStatus, "PUBLISHED")
                 .orderByDesc(Announcement::getIsTop)
                 .orderByDesc(Announcement::getPublishTime);
-        return announcementMapper.selectPage(page, wrapper);
+        IPage<Announcement> result = announcementMapper.selectPage(page, wrapper);
+
+        if (current == 1) cacheComponent.setObject(CACHE_KEY_LIST, result, 120, TimeUnit.SECONDS);
+        return result;
     }
 
     /**
@@ -98,6 +112,7 @@ public class AnnouncementService {
             announcement.setIsTop(false);
         }
         announcementMapper.insert(announcement);
+        cacheComponent.delete(CACHE_KEY_LIST);
         operationLogService.log(publisherId, "CREATE", "ANNOUNCEMENT", "新增公告: " + announcement.getTitle(), null);
     }
 
@@ -109,6 +124,7 @@ public class AnnouncementService {
         announcement.setId(id);
         announcement.setUpdateTime(LocalDateTime.now());
         announcementMapper.updateById(announcement);
+        cacheComponent.delete(CACHE_KEY_LIST);
         operationLogService.log(operatorId, "UPDATE", "ANNOUNCEMENT", "更新公告: " + id, null);
     }
 
@@ -118,6 +134,7 @@ public class AnnouncementService {
     @Transactional
     public void delete(Long id, Long operatorId) {
         announcementMapper.deleteById(id);
+        cacheComponent.delete(CACHE_KEY_LIST);
         operationLogService.log(operatorId, "DELETE", "ANNOUNCEMENT", "删除公告: " + id, null);
     }
 }

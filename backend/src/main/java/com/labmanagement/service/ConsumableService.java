@@ -3,6 +3,7 @@ package com.labmanagement.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.labmanagement.common.cache.CacheComponent;
 import com.labmanagement.common.exception.BusinessException;
 import com.labmanagement.common.result.ResultCode;
 import com.labmanagement.entity.Consumable;
@@ -19,6 +20,7 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 耗材管理服务
@@ -31,6 +33,9 @@ public class ConsumableService {
     private final ConsumableMapper consumableMapper;
     private final ConsumableLogMapper consumableLogMapper;
     private final OperationLogService operationLogService;
+    private final CacheComponent cacheComponent;
+
+    private static final String CACHE_KEY_LIST = "consumable:list:all";
 
     @lombok.Data
     public static class UseRequest {
@@ -52,9 +57,14 @@ public class ConsumableService {
      * 获取全部耗材列表
      */
     public List<Consumable> listAll() {
+        List<Consumable> cached = cacheComponent.getObject(CACHE_KEY_LIST, List.class);
+        if (cached != null && !cached.isEmpty()) return cached;
+
         LambdaQueryWrapper<Consumable> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(Consumable::getId);
-        return consumableMapper.selectList(wrapper);
+        List<Consumable> list = consumableMapper.selectList(wrapper);
+        cacheComponent.setObject(CACHE_KEY_LIST, list, 300, TimeUnit.SECONDS);
+        return list;
     }
 
     /**
@@ -108,6 +118,7 @@ public class ConsumableService {
         }
         consumable.setCreateTime(LocalDateTime.now());
         consumableMapper.insert(consumable);
+        cacheComponent.delete(CACHE_KEY_LIST);
         operationLogService.log(operatorId, "CREATE", "CONSUMABLE", "新增耗材: " + consumable.getName(), null);
     }
 
@@ -119,6 +130,7 @@ public class ConsumableService {
         consumable.setId(id);
         consumable.setUpdateTime(LocalDateTime.now());
         consumableMapper.updateById(consumable);
+        cacheComponent.delete(CACHE_KEY_LIST);
         operationLogService.log(operatorId, "UPDATE", "CONSUMABLE", "更新耗材: " + id, null);
     }
 
@@ -128,6 +140,7 @@ public class ConsumableService {
     @Transactional
     public void delete(Long id, Long operatorId) {
         consumableMapper.deleteById(id);
+        cacheComponent.delete(CACHE_KEY_LIST);
         operationLogService.log(operatorId, "DELETE", "CONSUMABLE", "删除耗材: " + id, null);
     }
 
@@ -164,6 +177,7 @@ public class ConsumableService {
         operationLogService.logWithSnapshot(operatorId, "IN", "CONSUMABLE",
                 "耗材入库: " + id + ", 数量: " + request.getQuantity(), null,
                 beforeSnapshot, afterSnapshot);
+        cacheComponent.delete(CACHE_KEY_LIST);
     }
 
     /**
@@ -215,6 +229,7 @@ public class ConsumableService {
                     "耗材库存低于预警阈值: " + consumable.getName() +
                             ", 当前库存: " + newStock + ", 阈值: " + consumable.getWarningThreshold(), null);
         }
+        cacheComponent.delete(CACHE_KEY_LIST);
 
         return needWarning;
     }

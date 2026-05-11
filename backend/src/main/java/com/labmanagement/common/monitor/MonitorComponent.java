@@ -1,5 +1,7 @@
 package com.labmanagement.common.monitor;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Gauge;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -9,9 +11,11 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 监控告警组件
+ * 监控告警组件 — Redis 存储 + Micrometer 暴露给 Prometheus
  */
 @Slf4j
 @Component
@@ -19,6 +23,18 @@ public class MonitorComponent {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    private final AtomicLong memoryUsage = new AtomicLong(0);
+    private final AtomicInteger threadCount = new AtomicInteger(0);
+
+    public MonitorComponent(MeterRegistry registry) {
+        Gauge.builder("app.memory.usage.percent", memoryUsage, AtomicLong::get)
+                .description("JVM 内存使用率(%)")
+                .register(registry);
+        Gauge.builder("app.thread.count", threadCount, AtomicInteger::get)
+                .description("活跃线程数")
+                .register(registry);
+    }
 
     private static final String METRICS_PREFIX = "metrics:";
     private static final String ALERT_PREFIX = "alert:";
@@ -92,24 +108,26 @@ public class MonitorComponent {
             Runtime runtime = Runtime.getRuntime();
             long maxMemory = runtime.maxMemory();
             long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-            double memoryUsage = (double) usedMemory / maxMemory * 100;
-            
-            recordMetric("system.memory.usage", memoryUsage);
-            
-            if (memoryUsage > 90) {
-                sendAlert("CRITICAL", String.format("内存使用率过高: %.2f%%", memoryUsage));
-            } else if (memoryUsage > 80) {
-                sendAlert("WARNING", String.format("内存使用率较高: %.2f%%", memoryUsage));
+            double memoryUsagePct = (double) usedMemory / maxMemory * 100;
+
+            recordMetric("system.memory.usage", memoryUsagePct);
+            memoryUsage.set((long) memoryUsagePct);
+
+            if (memoryUsagePct > 90) {
+                sendAlert("CRITICAL", String.format("内存使用率过高: %.2f%%", memoryUsagePct));
+            } else if (memoryUsagePct > 80) {
+                sendAlert("WARNING", String.format("内存使用率较高: %.2f%%", memoryUsagePct));
             }
-            
+
             // 检查线程数
-            int threadCount = Thread.activeCount();
-            recordMetric("system.thread.count", threadCount);
-            
-            if (threadCount > 200) {
-                sendAlert("WARNING", String.format("线程数过多: %d", threadCount));
+            int tc = Thread.activeCount();
+            recordMetric("system.thread.count", tc);
+            threadCount.set(tc);
+
+            if (tc > 200) {
+                sendAlert("WARNING", String.format("线程数过多: %d", tc));
             }
-            
+
         } catch (Exception e) {
             log.error("检查系统状态失败: {}", e.getMessage());
         }

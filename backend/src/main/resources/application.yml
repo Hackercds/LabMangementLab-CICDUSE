@@ -185,5 +185,5 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
   security:
     rate-limit:
-      enabled: true
+      enabled: ${RATE_LIMIT_ENABLED:false}
       requests-per-minute: 60

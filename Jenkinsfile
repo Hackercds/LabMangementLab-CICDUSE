@@ -7,6 +7,7 @@ pipeline {
         booleanParam(name: 'RESET_DATABASE', defaultValue: false, description: '☠ 删除并重建数据库（谨慎！）')
         booleanParam(name: 'RESET_ADMIN', defaultValue: true, description: '重置管理员密码为admin123（默认开启）')
         booleanParam(name: 'DEPLOY_MONITOR', defaultValue: false, description: '部署监控系统（Grafana+Prometheus）')
+        booleanParam(name: 'ENABLE_RATE_LIMIT', defaultValue: false, description: '启用接口限流（生产环境建议开启）')
     }
 
     stages {
@@ -124,6 +125,7 @@ pipeline {
                         -e REDIS_HOST=redis -e REDIS_PORT=6379 -e REDIS_PASSWORD="" -e REDIS_DATABASE=0 \
                         -e JWT_SECRET="${JWT_SECRET}" -e JWT_EXPIRATION="${JWT_EXPIRATION}" \
                         -e CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS}" -e JAVA_OPTS="${JAVA_OPTS}" \
+                        -e RATE_LIMIT_ENABLED="${ENABLE_RATE_LIMIT}" \
                         lab-backend
 
                     echo "前端..."
@@ -194,7 +196,6 @@ pipeline {
                             -e GF_SECURITY_ADMIN_USER=admin \
                             -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
                             -e GF_USERS_ALLOW_SIGN_UP=false \
-                            -e GF_INSTALL_PLUGINS=redis-datasource \
                             grafana/grafana:10.0.0 || echo "Grafana 启动失败"
 
                         echo ">>> 启动 Node Exporter..."

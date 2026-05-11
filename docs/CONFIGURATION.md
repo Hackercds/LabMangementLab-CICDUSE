@@ -124,8 +124,7 @@
 | 参数名 | 环境变量 | 默认值 | 说明 |
 |--------|---------|--------|------|
 | 忽略URL | SECURITY_IGNORE_URLS | /auth/login,/auth/register | 不需要认证的URL |
-| 限流启用 | RATE_LIMIT_ENABLED | true | 是否启用限流 |
-| 每分钟请求数 | RATE_LIMIT_REQUESTS_PER_MINUTE | 60 | 每分钟最大请求数 |
+| 限流启用 | RATE_LIMIT_ENABLED | false | 是否启用限流，prod 默认 false，可通过环境变量或 Jenkins 参数 ENABLE_RATE_LIMIT 覆盖 |
 
 ### 11. 文件上传配置
 
@@ -176,6 +175,7 @@
 | 最小提前预约小时数 | RESERVATION_MIN_HOURS | 2 | 最小提前预约小时数 |
 | 每天最大预约小时数 | RESERVATION_MAX_HOURS | 8 | 每天最大预约小时数 |
 | 取消预约提前小时数 | RESERVATION_CANCEL_HOURS | 24 | 取消预约提前小时数 |
+| 教师自动审批 | AUTO_APPROVE_TEACHER | true | 教师创建的预约是否自动通过 (system_config 表) |
 
 #### 设备配置
 
