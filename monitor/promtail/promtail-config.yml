@@ -28,10 +28,6 @@ scrape_configs:
       - timestamp:
           source: time
           format: "2006-01-02 15:04:05.000"
-      - label_drop:
-          - time
-          - thread
-
   - job_name: lab-management-frontend
     static_configs:
       - targets:
