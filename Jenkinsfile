@@ -213,7 +213,7 @@ pipeline {
                         docker run -d --name lab-mysql-exporter --restart always --network lab-network --network-alias mysql-exporter \
                             -p 9104:9104 \
                             -e DATA_SOURCE_NAME="root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/" \
-                            prom/mysqld-exporter:latest || echo "MySQL Exporter 启动失败"
+                            prom/mysqld-exporter:v0.14.0 || echo "MySQL Exporter 启动失败"
 
                         echo ">>> 启动 Redis Exporter..."
                         docker run -d --name lab-redis-exporter --restart always --network lab-network --network-alias redis-exporter \
