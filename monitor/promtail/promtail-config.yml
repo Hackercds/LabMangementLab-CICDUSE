@@ -67,6 +67,10 @@ scrape_configs:
       - target_label: 'environment'
         replacement: 'production'
     pipeline_stages:
+      - regex:
+          expression: '^\S+\s+(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)\s+\['
+      - labels:
+          level:
       - json:
           expressions:
             time: time
