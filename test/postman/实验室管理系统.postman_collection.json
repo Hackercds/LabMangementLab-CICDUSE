@@ -1,1029 +1,154 @@
 {
   "info": {
-    "name": "实验室管理系统 API 测试集合",
-    "_postman_id": "lab-management-collection",
-    "description": "实验室管理系统所有接口测试集合",
+    "name": "实验室管理系统 API",
+    "_postman_id": "lab-management-v2",
+    "description": "实验室管理系统完整API测试集合 (48个接口)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "认证模块",
+      "name": "01-认证",
       "item": [
-        {
-          "name": "用户登录",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"username\": \"admin\", \"password\": \"admin123\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "用户注册",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"username\": \"test001\", \"password\": \"123456\", \"realName\": \"测试用户\", \"role\": \"STUDENT\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "获取当前用户信息",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "修改密码",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"oldPassword\": \"123456\", \"newPassword\": \"1234567\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "password"
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"POST 登录","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"username\":\"admin\",\"password\":\"admin123\"}"},"url":{"raw":"{{baseUrl}}/auth/login","host":["{{baseUrl}}"],"path":["auth","login"]}}},
+        {"name":"POST 注册","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"username\":\"student01\",\"password\":\"123456\",\"realName\":\"测试学生\",\"role\":\"STUDENT\"}"},"url":{"raw":"{{baseUrl}}/auth/register","host":["{{baseUrl}}"],"path":["auth","register"]}}},
+        {"name":"GET 当前用户信息","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/auth/me","host":["{{baseUrl}}"],"path":["auth","me"]}}},
+        {"name":"PUT 修改密码","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"oldPassword\":\"admin123\",\"newPassword\":\"admin456\"}"},"url":{"raw":"{{baseUrl}}/auth/password","host":["{{baseUrl}}"],"path":["auth","password"]}}}
       ]
     },
     {
-      "name": "用户管理模块(管理员)",
+      "name": "02-用户管理(ADMIN)",
       "item": [
-        {
-          "name": "分页查询用户列表",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/user/page?current=1&size=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user",
-                "page"
-              ],
-              "query": [
-                {
-                  "key": "current",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                },
-                {
-                  "key": "keyword",
-                  "value": ""
-                },
-                {
-                  "key": "role",
-                  "value": ""
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "新增用户",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"username\": \"newuser\", \"password\": \"123456\", \"realName\": \"新用户\", \"role\": \"STUDENT\", \"status\": \"ENABLED\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/user",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "修改用户状态",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/user/{{userId}}/status?status=DISABLED",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user",
-                "{{userId}}",
-                "status"
-              ],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "DISABLED"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "删除用户",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/user/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "user",
-                "{{userId}}"
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 分页查询","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/user/page?current=1&size=10&keyword=&role=","host":["{{baseUrl}}"],"path":["user","page"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"keyword","value":""},{"key":"role","value":""}]}}},
+        {"name":"GET 详情","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/user/{{userId}}","host":["{{baseUrl}}"],"path":["user","{{userId}}"]}}},
+        {"name":"POST 新增","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"username\":\"newuser\",\"password\":\"123456\",\"realName\":\"新用户\",\"role\":\"STUDENT\",\"status\":\"ENABLED\"}"},"url":{"raw":"{{baseUrl}}/user","host":["{{baseUrl}}"],"path":["user"]}}},
+        {"name":"PUT 更新","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"realName\":\"更新姓名\",\"phone\":\"13800138000\",\"email\":\"test@test.com\"}"},"url":{"raw":"{{baseUrl}}/user/{{userId}}","host":["{{baseUrl}}"],"path":["user","{{userId}}"]}}},
+        {"name":"DELETE 删除","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/user/{{userId}}","host":["{{baseUrl}}"],"path":["user","{{userId}}"]}}},
+        {"name":"PUT 启用/禁用","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/user/{{userId}}/status?status=DISABLED","host":["{{baseUrl}}"],"path":["user","{{userId}}","status"],"query":[{"key":"status","value":"DISABLED"}]}}}
       ]
     },
     {
-      "name": "实验室模块",
+      "name": "03-实验室",
       "item": [
-        {
-          "name": "获取全部实验室列表",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/lab/list",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "lab",
-                "list"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "分页查询实验室",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/lab/page?current=1&size=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "lab",
-                "page"
-              ],
-              "query": [
-                {
-                  "key": "current",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "新增实验室(管理员)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"name\": \"测试实验室\", \"location\": \"测试楼101\", \"capacity\": 30, \"deviceCount\": 30, \"status\": \"FREE\", \"director\": \"张老师\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/lab",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "lab"
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 全部列表","request":{"method":"GET","url":{"raw":"{{baseUrl}}/lab/list","host":["{{baseUrl}}"],"path":["lab","list"]}}},
+        {"name":"GET 分页查询","request":{"method":"GET","url":{"raw":"{{baseUrl}}/lab/page?current=1&size=10&keyword=&status=","host":["{{baseUrl}}"],"path":["lab","page"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"keyword","value":""},{"key":"status","value":""}]}}},
+        {"name":"GET 详情","request":{"method":"GET","url":{"raw":"{{baseUrl}}/lab/{{labId}}","host":["{{baseUrl}}"],"path":["lab","{{labId}}"]}}},
+        {"name":"POST 新增(ADMIN)","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"新实验室\",\"location\":\"4号楼401\",\"capacity\":40,\"deviceCount\":20,\"status\":\"FREE\",\"director\":\"李老师\"}"},"url":{"raw":"{{baseUrl}}/lab","host":["{{baseUrl}}"],"path":["lab"]}}},
+        {"name":"PUT 更新(ADMIN)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"更新名称\",\"capacity\":50}"},"url":{"raw":"{{baseUrl}}/lab/{{labId}}","host":["{{baseUrl}}"],"path":["lab","{{labId}}"]}}},
+        {"name":"DELETE 删除(ADMIN)","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/lab/{{labId}}","host":["{{baseUrl}}"],"path":["lab","{{labId}}"]}}}
       ]
     },
     {
-      "name": "预约模块",
+      "name": "04-设备",
       "item": [
-        {
-          "name": "查询已占用时间段",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reservation/busy?labId=1&date=2024-01-15",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reservation",
-                "busy"
-              ],
-              "query": [
-                {
-                  "key": "labId",
-                  "value": "1"
-                },
-                {
-                  "key": "date",
-                  "value": "2024-01-15"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "获取我的预约列表",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reservation/my?current=1&size=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reservation",
-                "my"
-              ],
-              "query": [
-                {
-                  "key": "current",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "提交预约申请",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"labId\": 1, \"reservationDate\": \"2024-01-15\", \"startTime\": \"08:00\", \"endTime\": \"10:00\", \"purpose\": \"课程实验\", \"participantCount\": 30}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/reservation",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reservation"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "取消预约",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reservation/{{reservationId}}/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reservation",
-                "{{reservationId}}",
-                "cancel"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "审批预约",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reservation/{{reservationId}}/approve?status=APPROVED&comment=",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reservation",
-                "{{reservationId}}",
-                "approve"
-              ],
-              "query": [
-                {
-                  "key": "status",
-                  "value": "APPROVED"
-                },
-                {
-                  "key": "comment",
-                  "value": ""
-                }
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 按条件列表","request":{"method":"GET","url":{"raw":"{{baseUrl}}/device/list?labId=1&status=NORMAL","host":["{{baseUrl}}"],"path":["device","list"],"query":[{"key":"labId","value":"1"},{"key":"status","value":"NORMAL"}]}}},
+        {"name":"GET 分页查询","request":{"method":"GET","url":{"raw":"{{baseUrl}}/device/page?current=1&size=10&keyword=&labId=","host":["{{baseUrl}}"],"path":["device","page"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"keyword","value":""},{"key":"labId","value":""}]}}},
+        {"name":"GET 详情","request":{"method":"GET","url":{"raw":"{{baseUrl}}/device/{{deviceId}}","host":["{{baseUrl}}"],"path":["device","{{deviceId}}"]}}},
+        {"name":"POST 新增(ADMIN)","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"新设备\",\"model\":\"T1000\",\"serialNumber\":\"SN001\",\"labId\":1,\"purchaseDate\":\"2026-01-01\",\"status\":\"NORMAL\"}"},"url":{"raw":"{{baseUrl}}/device","host":["{{baseUrl}}"],"path":["device"]}}},
+        {"name":"PUT 更新(ADMIN)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"更新名称\",\"status\":\"MAINTENANCE\"}"},"url":{"raw":"{{baseUrl}}/device/{{deviceId}}","host":["{{baseUrl}}"],"path":["device","{{deviceId}}"]}}},
+        {"name":"DELETE 删除(ADMIN)","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/device/{{deviceId}}","host":["{{baseUrl}}"],"path":["device","{{deviceId}}"]}}},
+        {"name":"POST 借用设备","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"expectReturnDate\":\"2026-05-18\",\"purpose\":\"实验使用\"}"},"url":{"raw":"{{baseUrl}}/device/{{deviceId}}/borrow","host":["{{baseUrl}}"],"path":["device","{{deviceId}}","borrow"]}}},
+        {"name":"POST 归还设备","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/device/{{deviceId}}/return","host":["{{baseUrl}}"],"path":["device","{{deviceId}}","return"]}}}
       ]
     },
     {
-      "name": "设备模块",
+      "name": "05-耗材",
       "item": [
-        {
-          "name": "获取设备列表",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/device/list?labId=1&status=NORMAL",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "device",
-                "list"
-              ],
-              "query": [
-                {
-                  "key": "labId",
-                  "value": "1"
-                },
-                {
-                  "key": "status",
-                  "value": "NORMAL"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "分页查询设备",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/device/page?current=1&size=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "device",
-                "page"
-              ],
-              "query": [
-                {
-                  "key": "current",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "借用设备",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"expectReturnTime\": \"2024-01-22\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/device/{{deviceId}}/borrow",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "device",
-                "{{deviceId}}",
-                "borrow"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "归还设备",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/device/{{deviceId}}/return",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "device",
-                "{{deviceId}}",
-                "return"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "新增设备(管理员)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"name\": \"示波器\", \"model\": \"XXX-2000\", \"serialNumber\": \"SN123456\", \"labId\": 1, \"purchaseDate\": \"2024-01-01\", \"status\": \"NORMAL\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/device",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "device"
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 全部列表","request":{"method":"GET","url":{"raw":"{{baseUrl}}/consumable/list","host":["{{baseUrl}}"],"path":["consumable","list"]}}},
+        {"name":"GET 分页查询","request":{"method":"GET","url":{"raw":"{{baseUrl}}/consumable/page?current=1&size=10&keyword=","host":["{{baseUrl}}"],"path":["consumable","page"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"keyword","value":""}]}}},
+        {"name":"GET 低库存预警","request":{"method":"GET","url":{"raw":"{{baseUrl}}/consumable/warning","host":["{{baseUrl}}"],"path":["consumable","warning"]}}},
+        {"name":"GET 详情","request":{"method":"GET","url":{"raw":"{{baseUrl}}/consumable/{{consumableId}}","host":["{{baseUrl}}"],"path":["consumable","{{consumableId}}"]}}},
+        {"name":"GET 出入库记录","request":{"method":"GET","url":{"raw":"{{baseUrl}}/consumable/{{consumableId}}/logs","host":["{{baseUrl}}"],"path":["consumable","{{consumableId}}","logs"]}}},
+        {"name":"POST 新增(ADMIN)","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"新耗材\",\"specification\":\"标准\",\"unit\":\"个\",\"currentStock\":100,\"warningThreshold\":10,\"location\":\"储物柜C1\"}"},"url":{"raw":"{{baseUrl}}/consumable","host":["{{baseUrl}}"],"path":["consumable"]}}},
+        {"name":"PUT 更新(ADMIN)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"name\":\"更新名称\",\"warningThreshold\":20}"},"url":{"raw":"{{baseUrl}}/consumable/{{consumableId}}","host":["{{baseUrl}}"],"path":["consumable","{{consumableId}}"]}}},
+        {"name":"DELETE 删除(ADMIN)","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/consumable/{{consumableId}}","host":["{{baseUrl}}"],"path":["consumable","{{consumableId}}"]}}},
+        {"name":"POST 入库(ADMIN)","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"quantity\":20,\"purpose\":\"采购入库\"}"},"url":{"raw":"{{baseUrl}}/consumable/{{consumableId}}/in","host":["{{baseUrl}}"],"path":["consumable","{{consumableId}}","in"]}}},
+        {"name":"POST 领用出库","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"quantity\":5,\"purpose\":\"实验使用\",\"receiver\":\"张三\"}"},"url":{"raw":"{{baseUrl}}/consumable/{{consumableId}}/out","host":["{{baseUrl}}"],"path":["consumable","{{consumableId}}","out"]}}}
       ]
     },
     {
-      "name": "耗材模块",
+      "name": "06-预约",
       "item": [
-        {
-          "name": "获取全部耗材列表",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/consumable/list",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "consumable",
-                "list"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "获取低库存耗材列表",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/consumable/warning",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "consumable",
-                "warning"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "新增耗材(管理员)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"name\": \"一次性手套\", \"specification\": \"中号\", \"unit\": \"包\", \"currentStock\": 50, \"warningThreshold\": 10, \"location\": \"储物柜A1\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/consumable",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "consumable"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "耗材入库",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"quantity\": 10, \"purpose\": \"采购入库\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/consumable/{{consumableId}}/in",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "consumable",
-                "{{consumableId}}",
-                "in"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "耗材领用出库",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"quantity\": 5, \"purpose\": \"实验使用\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/consumable/{{consumableId}}/out",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "consumable",
-                "{{consumableId}}",
-                "out"
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 已占用时间段","request":{"method":"GET","url":{"raw":"{{baseUrl}}/reservation/busy?labId=1&date=2026-05-11","host":["{{baseUrl}}"],"path":["reservation","busy"],"query":[{"key":"labId","value":"1"},{"key":"date","value":"2026-05-11"}]}}},
+        {"name":"GET 我的预约","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/my?current=1&size=10","host":["{{baseUrl}}"],"path":["reservation","my"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"}]}}},
+        {"name":"GET 管理端列表","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/list?current=1&size=10&labId=&userId=&status=&date=","host":["{{baseUrl}}"],"path":["reservation","list"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"labId","value":""},{"key":"userId","value":""},{"key":"status","value":""},{"key":"date","value":""}]}}},
+        {"name":"GET 某日预约概览","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/overview?date=2026-05-11","host":["{{baseUrl}}"],"path":["reservation","overview"],"query":[{"key":"date","value":"2026-05-11"}]}}},
+        {"name":"GET 详情","request":{"method":"GET","url":{"raw":"{{baseUrl}}/reservation/{{reservationId}}","host":["{{baseUrl}}"],"path":["reservation","{{reservationId}}"]}}},
+        {"name":"POST 提交预约","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"labId\":1,\"reservationDate\":\"2026-05-11\",\"startTime\":\"10:00\",\"endTime\":\"12:00\",\"purpose\":\"课程实验\",\"participantCount\":30}"},"url":{"raw":"{{baseUrl}}/reservation","host":["{{baseUrl}}"],"path":["reservation"]}}},
+        {"name":"POST 管理员代创建","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"userId\":2,\"labId\":1,\"reservationDate\":\"2026-05-11\",\"startTime\":\"08:00\",\"endTime\":\"10:00\",\"purpose\":\"管理员代申请\",\"participantCount\":20,\"force\":false}"},"url":{"raw":"{{baseUrl}}/reservation/admin-create","host":["{{baseUrl}}"],"path":["reservation","admin-create"]}}},
+        {"name":"POST 每周重复预约","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"labId\":1,\"startDate\":\"2026-05-11\",\"endDate\":\"2026-06-11\",\"startTime\":\"14:00\",\"endTime\":\"16:00\",\"dayOfWeek\":1,\"purpose\":\"每周一实验课\",\"participantCount\":25}"},"url":{"raw":"{{baseUrl}}/reservation/repeat","host":["{{baseUrl}}"],"path":["reservation","repeat"]}}},
+        {"name":"PUT 审批(通过/拒绝)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/{{reservationId}}/approve?status=APPROVED&comment=同意","host":["{{baseUrl}}"],"path":["reservation","{{reservationId}}","approve"],"query":[{"key":"status","value":"APPROVED"},{"key":"comment","value":"同意"}]}}},
+        {"name":"PUT 强制审批","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/{{reservationId}}/force-approve?comment=强制通过","host":["{{baseUrl}}"],"path":["reservation","{{reservationId}}","force-approve"],"query":[{"key":"comment","value":"强制通过"}]}}},
+        {"name":"PUT 用户取消","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/{{reservationId}}/cancel","host":["{{baseUrl}}"],"path":["reservation","{{reservationId}}","cancel"]}}},
+        {"name":"PUT 管理员撤销","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/{{reservationId}}/admin-cancel?reason=违规预约","host":["{{baseUrl}}"],"path":["reservation","{{reservationId}}","admin-cancel"],"query":[{"key":"reason","value":"违规预约"}]}}},
+        {"name":"GET 下载批量导入模板","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/reservation/batch-template","host":["{{baseUrl}}"],"path":["reservation","batch-template"]}}},
+        {"name":"POST 批量导入Excel","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"body":{"mode":"formdata","formdata":[{"key":"file","type":"file","src":""}]},"url":{"raw":"{{baseUrl}}/reservation/batch-import","host":["{{baseUrl}}"],"path":["reservation","batch-import"]}}}
       ]
     },
     {
-      "name": "统计模块",
+      "name": "07-公告",
       "item": [
-        {
-          "name": "仪表盘统计",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/statistics/dashboard",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "statistics",
-                "dashboard"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "实验室使用率统计",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/statistics/lab-usage?startDate=2024-01-01&endDate=2024-01-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "statistics",
-                "lab-usage"
-              ],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2024-01-31"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "导出实验室使用率Excel",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/statistics/export/lab-usage?startDate=2024-01-01&endDate=2024-01-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "statistics",
-                "export",
-                "lab-usage"
-              ],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2024-01-31"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 公开列表","request":{"method":"GET","url":{"raw":"{{baseUrl}}/announcement/list?current=1&size=10","host":["{{baseUrl}}"],"path":["announcement","list"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"}]}}},
+        {"name":"GET 详情","request":{"method":"GET","url":{"raw":"{{baseUrl}}/announcement/1","host":["{{baseUrl}}"],"path":["announcement","1"]}}},
+        {"name":"GET 我的通知","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/announcement/my-notifications","host":["{{baseUrl}}"],"path":["announcement","my-notifications"]}}},
+        {"name":"GET 未读通知数","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/announcement/unread-count","host":["{{baseUrl}}"],"path":["announcement","unread-count"]}}},
+        {"name":"GET 管理端列表(ADMIN)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/announcement/admin/page?current=1&size=10&status=&keyword=","host":["{{baseUrl}}"],"path":["announcement","admin","page"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"status","value":""},{"key":"keyword","value":""}]}}},
+        {"name":"POST 新增(ADMIN)","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"title\":\"放假通知\",\"content\":\"五一假期实验室关闭\",\"isTop\":1,\"status\":\"PUBLISHED\"}"},"url":{"raw":"{{baseUrl}}/announcement","host":["{{baseUrl}}"],"path":["announcement"]}}},
+        {"name":"PUT 更新(ADMIN)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"title\":\"更新标题\",\"content\":\"更新内容\"}"},"url":{"raw":"{{baseUrl}}/announcement/1","host":["{{baseUrl}}"],"path":["announcement","1"]}}},
+        {"name":"DELETE 删除(ADMIN)","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/announcement/1","host":["{{baseUrl}}"],"path":["announcement","1"]}}}
       ]
     },
     {
-      "name": "公告模块",
+      "name": "08-统计(ADMIN)",
       "item": [
-        {
-          "name": "获取公开公告列表",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/announcement/list?current=1&size=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "announcement",
-                "list"
-              ],
-              "query": [
-                {
-                  "key": "current",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "新增公告(管理员)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"title\": \"实验室放假通知\", \"content\": \"春节期间实验室暂停开放，请大家注意安排时间\", \"isTop\": 1, \"status\": \"PUBLISHED\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/announcement",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "announcement"
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 仪表盘","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/statistics/dashboard","host":["{{baseUrl}}"],"path":["statistics","dashboard"]}}},
+        {"name":"GET 实验室使用率","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/statistics/lab-usage?startDate=2026-01-01&endDate=2026-05-11","host":["{{baseUrl}}"],"path":["statistics","lab-usage"],"query":[{"key":"startDate","value":"2026-01-01"},{"key":"endDate","value":"2026-05-11"}]}}},
+        {"name":"GET 设备借用统计","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/statistics/device-borrow?startDate=2026-01-01&endDate=2026-05-11","host":["{{baseUrl}}"],"path":["statistics","device-borrow"],"query":[{"key":"startDate","value":"2026-01-01"},{"key":"endDate","value":"2026-05-11"}]}}},
+        {"name":"GET 导出Excel","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/statistics/export/lab-usage?startDate=2026-01-01&endDate=2026-05-11","host":["{{baseUrl}}"],"path":["statistics","export","lab-usage"],"query":[{"key":"startDate","value":"2026-01-01"},{"key":"endDate","value":"2026-05-11"}]}}}
       ]
     },
     {
-      "name": "操作日志模块",
+      "name": "09-系统配置",
       "item": [
-        {
-          "name": "分页查询操作日志",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/operation-log/page?current=1&size=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "operation-log",
-                "page"
-              ],
-              "query": [
-                {
-                  "key": "current",
-                  "value": "1"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                },
-                {
-                  "key": "module",
-                  "value": ""
-                }
-              ]
-            }
-          },
-          "response": []
-        }
+        {"name":"GET 全部配置(ADMIN)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/system-config/list","host":["{{baseUrl}}"],"path":["system-config","list"]}}},
+        {"name":"PUT 更新配置项(ADMIN)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"configKey\":\"auto_approve_teacher\",\"configValue\":\"false\"}"},"url":{"raw":"{{baseUrl}}/system-config/update","host":["{{baseUrl}}"],"path":["system-config","update"]}}},
+        {"name":"GET 自动审批开关","request":{"method":"GET","url":{"raw":"{{baseUrl}}/system-config/auto-approve","host":["{{baseUrl}}"],"path":["system-config","auto-approve"]}}},
+        {"name":"GET 当前有效时间","request":{"method":"GET","url":{"raw":"{{baseUrl}}/system-config/current-time","host":["{{baseUrl}}"],"path":["system-config","current-time"]}}},
+        {"name":"GET 服务器时间戳","request":{"method":"GET","url":{"raw":"{{baseUrl}}/system-config/server-time","host":["{{baseUrl}}"],"path":["system-config","server-time"]}}},
+        {"name":"PUT 设置管理员时间覆盖(ADMIN)","request":{"method":"PUT","header":[{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"enabled\":false,\"overrideTime\":\"2026-06-01T10:00:00\"}"},"url":{"raw":"{{baseUrl}}/system-config/admin-time","host":["{{baseUrl}}"],"path":["system-config","admin-time"]}}}
+      ]
+    },
+    {
+      "name": "10-操作日志(ADMIN)",
+      "item": [
+        {"name":"GET 分页查询","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{token}}"}],"url":{"raw":"{{baseUrl}}/operation-log/page?current=1&size=10&operatorId=&module=&operationType=","host":["{{baseUrl}}"],"path":["operation-log","page"],"query":[{"key":"current","value":"1"},{"key":"size","value":"10"},{"key":"operatorId","value":""},{"key":"module","value":""},{"key":"operationType","value":""}]}}}
       ]
     }
   ],
-  "variable": [
+  "event": [
     {
-      "key": "baseUrl",
-      "value": "http://localhost:8081/api"
-    },
-    {
-      "key": "token",
-      "value": ""
-    },
-    {
-      "key": "userId",
-      "value": "1"
-    },
-    {
-      "key": "reservationId",
-      "value": "1"
-    },
-    {
-      "key": "deviceId",
-      "value": "1"
-    },
-    {
-      "key": "consumableId",
-      "value": "1"
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 登录成功后自动提取token到集合变量",
+          "if (pm.response.code === 200 && pm.info.requestName.includes('登录')) {",
+          "  const json = pm.response.json();",
+          "  if (json.data && json.data.token) {",
+          "    pm.collectionVariables.set('token', json.data.token);",
+          "    console.log('Token已自动提取');",
+          "  }",
+          "}"
+        ]
+      }
     }
+  ],
+  "variable": [
+    {"key":"baseUrl","value":"http://localhost:10082/api"},
+    {"key":"token","value":""},
+    {"key":"userId","value":"1"},
+    {"key":"labId","value":"1"},
+    {"key":"reservationId","value":"1"},
+    {"key":"deviceId","value":"1"},
+    {"key":"consumableId","value":"1"}
   ]
 }

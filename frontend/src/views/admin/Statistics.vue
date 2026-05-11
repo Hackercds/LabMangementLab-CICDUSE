@@ -13,7 +13,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button type="success" @click="handleExport">导出Excel</el-button>
+          <el-button type="success" @click="handleExport" :loading="exporting">导出Excel</el-button>
         </el-form-item>
       </el-form>
 
@@ -44,6 +44,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getLabUsage, exportLabUsage } from '@/api/statistics'
 
@@ -53,6 +54,7 @@ const dateRange = ref([
 ])
 const searchLab = ref('')
 const tableData = ref([])
+const exporting = ref(false)
 let chart = null
 
 const filteredData = computed(() => {
@@ -84,8 +86,17 @@ async function loadData() {
   } catch(e) { console.error(e) }
 }
 
-function handleExport() {
-  window.open(`/api/statistics/export/lab-usage?startDate=${dateRange.value[0]}&endDate=${dateRange.value[1]}`)
+async function handleExport() {
+  exporting.value = true
+  try {
+    await exportLabUsage(dateRange.value[0], dateRange.value[1])
+    ElMessage.success('导出成功')
+  } catch(e) {
+    console.error('导出失败', e)
+    ElMessage.error('导出失败')
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(loadData)

@@ -70,8 +70,11 @@ public class ReservationController {
             @RequestParam(required = false) Long labId,
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        IPage<Reservation> page = reservationService.pageList(current, size, labId, userId, status, date);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String keyword) {
+        IPage<Reservation> page = reservationService.pageList(current, size, labId, userId, status, date, startDate, endDate, keyword);
         return Result.success(page);
     }
 

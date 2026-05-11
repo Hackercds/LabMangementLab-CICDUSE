@@ -79,7 +79,18 @@ public class ReservationService {
         }
 
         reservation.setUserId(userId);
-        reservation.setStatus("PENDING");
+
+        // 自动审批：如果创建者是教师且开启了auto_approve_teacher，无冲突时直接通过
+        boolean autoApprove = systemConfigService.getBooleanConfig("auto_approve_teacher", false);
+        User creator = userMapper.selectById(userId);
+        if (autoApprove && creator != null && "TEACHER".equals(creator.getRole())) {
+            reservation.setStatus("APPROVED");
+            reservation.setApproverId(userId);
+            reservation.setApproveTime(LocalDateTime.now());
+            reservation.setApproveComment("教师自动审批通过");
+        } else {
+            reservation.setStatus("PENDING");
+        }
         reservation.setCreateTime(LocalDateTime.now());
         reservation.setUpdateTime(LocalDateTime.now());
         reservationMapper.insert(reservation);
@@ -269,7 +280,7 @@ public class ReservationService {
         return reservationMapper.selectPage(page, wrapper);
     }
 
-    public IPage<Reservation> pageList(Integer current, Integer size, Long labId, Long userId, String status, LocalDate date) {
+    public IPage<Reservation> pageList(Integer current, Integer size, Long labId, Long userId, String status, LocalDate date, LocalDate startDate, LocalDate endDate, String keyword) {
         Page<Reservation> page = new Page<>(current, size);
         QueryWrapper<Reservation> wrapper = new QueryWrapper<>();
         wrapper.eq("deleted", 0);
@@ -280,10 +291,18 @@ public class ReservationService {
             wrapper.eq("user_id", userId);
         }
         if (status != null && !status.isEmpty()) {
-            wrapper.eq("status", status);
+            String[] statuses = status.split(",");
+            wrapper.in(statuses.length > 1, "status", (Object[]) statuses);
+            if (statuses.length == 1) wrapper.eq("status", statuses[0]);
         }
         if (date != null) {
             wrapper.eq("reservation_date", date);
+        } else {
+            if (startDate != null) wrapper.ge("reservation_date", startDate);
+            if (endDate != null) wrapper.le("reservation_date", endDate);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.like("purpose", keyword);
         }
         wrapper.orderByDesc("create_time");
         return reservationMapper.selectPage(page, wrapper);
@@ -456,9 +475,17 @@ public class ReservationService {
             r.setEndTime(reservation.getEndTime());
             r.setPurpose(reservation.getPurpose());
             r.setParticipantCount(reservation.getParticipantCount());
-            r.setStatus("APPROVED");
-            r.setApproverId(userId);
-            r.setApproveTime(LocalDateTime.now());
+            // 教师+开启自动审批时直接通过，否则PENDING
+            boolean autoApprove = systemConfigService.getBooleanConfig("auto_approve_teacher", false);
+            User creator = userMapper.selectById(userId);
+            if (autoApprove && creator != null && "TEACHER".equals(creator.getRole())) {
+                r.setStatus("APPROVED");
+                r.setApproverId(userId);
+                r.setApproveTime(LocalDateTime.now());
+                r.setApproveComment("教师自动审批通过");
+            } else {
+                r.setStatus("PENDING");
+            }
             r.setCreateTime(LocalDateTime.now()); r.setUpdateTime(LocalDateTime.now());
             reservationMapper.insert(r);
             results.add(date + ": 创建成功");
