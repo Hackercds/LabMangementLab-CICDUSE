@@ -51,8 +51,9 @@ pipeline {
                     [ "${CLEAN_VOLUMES}" = "true" ] && for vol in $(docker volume ls -q | grep lab-redis-data); do docker volume rm "$vol" 2>/dev/null || true; done
 
                     docker network create lab-network 2>/dev/null || true
-                    docker volume create lab-mysql-data
-                    docker volume create lab-redis-data
+                    # volume 创建失败不影响（docker run -v 会自动创建），加重试以防临时网络抖动
+                    for i in 1 2 3; do docker volume create lab-mysql-data 2>/dev/null && break || sleep 3; done || true
+                    for i in 1 2 3; do docker volume create lab-redis-data 2>/dev/null && break || sleep 3; done || true
 
                     echo "MySQL..."
                     docker run -d --name lab-mysql --restart always --network lab-network --network-alias mysql \
