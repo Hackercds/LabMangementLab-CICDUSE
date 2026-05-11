@@ -67,17 +67,17 @@ scrape_configs:
       - target_label: 'environment'
         replacement: 'production'
     pipeline_stages:
-      - regex:
-          expression: '^\S+\s+(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)\s+\['
-      - labels:
-          level:
       - json:
           expressions:
+            log: log
+            stream: stream
             time: time
-            level: level
-            msg: msg
+      - regex:
+          source: log
+          expression: '(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)'
       - labels:
           level:
+          stream:
       - timestamp:
           source: time
           format: RFC3339Nano
