@@ -203,14 +203,6 @@ pipeline {
                             --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs \
                             --collector.filesystem.mount-points-exclude='^/(sys|proc|dev|host|etc)($|/)' || echo "Node Exporter 启动失败"
 
-                        echo ">>> 启动 cAdvisor..."
-                        docker run -d --name lab-cadvisor --restart always --network lab-network --network-alias cadvisor \
-                            -p 8088:8080 \
-                            -v /:/rootfs:ro -v /var/run:/var/run:ro -v /sys:/sys:ro \
-                            -v /var/lib/docker/:/var/lib/docker:ro -v /dev/disk/:/dev/disk:ro \
-                            --privileged \
-                            google/cadvisor:latest || echo "cAdvisor 启动失败（可忽略）"
-
                         echo ">>> 启动 Blackbox Exporter..."
                         docker run -d --name lab-blackbox-exporter --restart always --network lab-network --network-alias blackbox-exporter \
                             -p 9115:9115 \
@@ -220,7 +212,7 @@ pipeline {
                         echo ">>> 启动 MySQL Exporter..."
                         docker run -d --name lab-mysql-exporter --restart always --network lab-network --network-alias mysql-exporter \
                             -p 9104:9104 \
-                            -e DATA_SOURCE_NAME="${MYSQL_USER}:${MYSQL_PASSWORD}@(mysql:3306)/${MYSQL_DATABASE}" \
+                            -e DATA_SOURCE_NAME="root:${MYSQL_ROOT_PASSWORD}@(mysql:3306)/" \
                             prom/mysqld-exporter:v0.15.0 || echo "MySQL Exporter 启动失败"
 
                         echo ">>> 启动 Redis Exporter..."
