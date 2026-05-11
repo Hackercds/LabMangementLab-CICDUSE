@@ -83,8 +83,9 @@ import {
 import { useUserStore } from '@/store'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import request from '@/api/request'
+import { getToken } from '@/utils/auth'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -93,7 +94,10 @@ const userInfo = userStore.userInfo
 const notifyCount = ref(0)
 const notifications = ref([])
 
+const notificationTimer = ref(null)
+
 async function loadNotifications() {
+  if (!getToken()) return
   try {
     const [cntRes, listRes] = await Promise.all([
       request({ url: '/announcement/unread-count', method: 'get' }),
@@ -103,8 +107,15 @@ async function loadNotifications() {
     notifications.value = listRes.data || []
   } catch {}
 }
-onMounted(loadNotifications)
-setInterval(loadNotifications, 30000) // 30秒刷新一次
+onMounted(() => {
+  if (getToken()) {
+    loadNotifications()
+    notificationTimer.value = setInterval(loadNotifications, 30000)
+  }
+})
+onUnmounted(() => {
+  if (notificationTimer.value) clearInterval(notificationTimer.value)
+})
 
 function handleLogout() {
   ElMessageBox.confirm('确定要退出登录吗？', '提示', {

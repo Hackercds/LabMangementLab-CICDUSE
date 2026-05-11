@@ -72,6 +72,8 @@ scrape_configs:
             log: log
             stream: stream
             time: time
+      - output:
+          source: log
       - labels:
           stream:
       - timestamp:
