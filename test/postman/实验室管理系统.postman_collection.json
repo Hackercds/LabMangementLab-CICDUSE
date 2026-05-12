@@ -126,7 +126,7 @@
   ],
   "event": [
     {
-      "listen": "prerequest",
+      "listen": "test",
       "script": {
         "type": "text/javascript",
         "exec": [

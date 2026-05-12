@@ -1,4 +1,4 @@
-username,password,realName,role
+csv_user,csv_pass,csv_name,csv_role
 ptuser001,Test123456,压测用户001,STUDENT
 ptuser002,Test123456,压测用户002,STUDENT
 ptuser003,Test123456,压测用户003,STUDENT
